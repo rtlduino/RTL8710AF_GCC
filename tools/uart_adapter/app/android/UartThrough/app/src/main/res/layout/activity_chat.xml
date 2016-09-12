@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	android:id="@+id/mainlayout"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:orientation="vertical"
+	xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <LinearLayout
+		android:id="@+id/layer1_linear0"
+		android:layout_width="fill_parent"
+		android:layout_height="0dp"
+		android:orientation="horizontal"
+		android:background="@drawable/bg_index01"
+		android:layout_weight="1">
+
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+			android:scaleType="fitCenter"
+			android:padding="2dp"
+            android:src="@drawable/back"/>
+
+        <TextView
+            android:id="@+id/APPTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center"
+            android:layout_weight="1.75"
+            android:gravity="left"
+            android:paddingLeft="20dp"
+            android:text="Let us just chat"
+            android:textColor="@android:color/black"
+            android:textSize="20sp" />
+		
+	</LinearLayout>
+    
+    
+    <LinearLayout
+			android:id="@+id/layer1_linear2"
+			android:layout_width="fill_parent"
+			android:layout_height="0dp"
+			android:background="@drawable/bg_index1"
+			android:layout_weight="8">
+			
+			<ScrollView
+			    android:id="@+id/chat_ScrollView"
+			    android:layout_width="fill_parent"
+			    android:layout_height="match_parent"
+			    android:background="#ffeeeeee"
+			    android:fillViewport="false" >
+		
+		            <TextView
+		                android:id="@+id/chatDisplay"
+		                android:text=""
+		                android:layout_width="wrap_content"
+		                android:layout_height="wrap_content"
+		                android:textSize="14dp"
+		                android:background="#ffffffff"
+		                
+		                android:focusable="true"
+            			android:focusableInTouchMode="true"/>
+		    </ScrollView>
+		    
+	</LinearLayout>
+	
+    <LinearLayout
+        android:id="@+id/layer1_linear3"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal" >
+
+        <EditText
+            android:id="@+id/editTx_send"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_weight="0.52"
+            android:clickable="true"
+            android:ems="10"
+            android:enabled="true"
+            android:text=""
+            android:textSize="14dp" />
+
+        <Button
+            android:id="@+id/btn_send"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:text="Send" />
+    </LinearLayout>
+    
+    <LinearLayout
+			android:id="@+id/debugLayout"
+			android:layout_width="fill_parent"
+			android:layout_height="0dp" 
+			android:background="#FFFFFF"
+			android:layout_weight="0">
+			
+		    <TextView 
+		        android:id="@+id/text_test"
+		        android:layout_width="fill_parent"
+            	android:layout_height="fill_parent"
+            	android:text=""
+            	android:textSize="12sp"
+            	android:maxLines = "9999999"
+				android:scrollbars = "vertical"/>
+		    
+	</LinearLayout>
+	
+    
+</LinearLayout>

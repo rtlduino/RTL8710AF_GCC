@@ -1,0 +1,14 @@
+sudo: required
+dist: trusty
+language: c
+compiler:
+  - gcc
+
+before_script:
+  - sudo dpkg --add-architecture i386
+  - sudo apt-get update -qq || true
+  - sudo apt-get install -y lib32ncurses5  make bc gawk
+
+script:
+  - cd ./project/realtek_ameba1_va0_example/GCC-RELEASE
+  - make clean;make

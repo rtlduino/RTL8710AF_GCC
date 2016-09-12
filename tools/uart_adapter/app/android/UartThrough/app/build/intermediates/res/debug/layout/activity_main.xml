@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	android:id="@+id/mainlayout"
+	android:layout_width="fill_parent"
+	android:layout_height="fill_parent"
+	android:orientation="vertical"
+	xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <LinearLayout
+		android:id="@+id/layer1_linear0"
+		android:layout_width="fill_parent"
+		android:layout_height="0dp"
+		android:orientation="horizontal"
+		android:background="@drawable/bg_index01"
+		android:layout_weight="1">
+
+        <ImageView
+            android:id="@+id/APPimageView"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+			android:scaleType="fitCenter"
+			android:padding="2dp"
+            android:src="@drawable/logo"/>
+
+        <TextView
+            android:id="@+id/APPTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center"
+            android:layout_weight="3"
+            android:gravity="left"
+            android:paddingLeft="20dp"
+            android:text="Uart Through"
+            android:textColor="@android:color/black"
+            android:textSize="16sp" />
+
+        <ImageButton
+			android:id="@+id/btn_scanDevices"
+			android:contentDescription="@string/app_name"
+			android:layout_weight="1"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_gravity="center"
+			android:scaleType="fitCenter"
+			android:padding="5dp"
+			android:layout_margin= "1dp"
+			android:src="@drawable/search"/>
+        
+        <!--ImageButton
+			android:id="@+id/btn_addDevice"
+			android:contentDescription="@string/app_name"
+			android:layout_weight="1"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_gravity="center"
+			android:scaleType="fitCenter"
+			android:padding="5dp"
+			android:layout_margin= "1dp"
+			android:src="@drawable/add"/-->
+        
+        
+        <ImageButton
+			android:id="@+id/btn_setting"
+			android:contentDescription="@string/app_name"
+			android:layout_weight="1"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_gravity="center"
+			android:scaleType="fitCenter"
+			android:padding="5dp"
+			android:layout_margin= "1dp"
+			android:src="@drawable/setting"/>
+		
+	</LinearLayout>
+    
+    
+    <LinearLayout
+			android:id="@+id/layer1_linear2"
+			android:layout_width="fill_parent"
+			android:layout_height="0dp"
+			android:background="@drawable/bg_index1"
+			android:layout_weight="8">
+			
+		    <GridView  
+	            android:id="@+id/gridview_list"
+	            android:listSelector="@android:color/transparent"
+	            android:cacheColorHint="@android:color/transparent"
+	            android:numColumns="2"
+	            
+		        android:layout_width="fill_parent" 
+		        android:layout_height="fill_parent" 
+		        android:padding="35dp"
+		     	android:gravity="center"
+		     	android:layout_gravity="center"
+		     	android:columnWidth="50pt"
+		     	android:stretchMode="columnWidth"
+		     	android:focusable="false"
+				android:focusableInTouchMode="false"/>
+		    
+	</LinearLayout>
+	
+    <LinearLayout
+			android:id="@+id/debugLayout"
+			android:layout_width="fill_parent"
+			android:layout_height="0dp" 
+			android:background="#FFFFFF"
+			android:layout_weight="0">
+			
+		    <TextView 
+		        android:id="@+id/text_test"
+		        android:layout_width="fill_parent"
+            	android:layout_height="fill_parent"
+            	android:text=""
+            	android:textSize="12sp"
+            	android:maxLines = "9999999"
+				android:scrollbars = "vertical"/>
+		    
+	</LinearLayout>
+	
+    <LinearLayout
+			android:id="@+id/debugLayout"
+			android:layout_width="fill_parent"
+			android:layout_height="0dp" 
+			android:background="#FFFFFF"
+			android:layout_weight="3">
+			
+        	<ScrollView
+			    android:id="@+id/SCROLLER_ID"
+			    android:layout_width="fill_parent"
+			    android:layout_height="wrap_content"
+			    android:scrollbars="vertical"
+			    android:fillViewport="true">
+        
+			    <TextView 
+			        android:id="@+id/text_debug"
+			        android:layout_width="fill_parent"
+	            	android:layout_height="fill_parent"
+	            	android:text="Debug Message"
+	            	android:textSize="12sp"
+	            	android:maxLines = "9999999"
+					android:scrollbars = "vertical"/>
+			</ScrollView>
+		    
+	</LinearLayout>
+    
+</LinearLayout><!-- From: file:/D:/temp/android/mdis_discovery/UartThrough1/app/src/main/res/layout/activity_main.xml -->
