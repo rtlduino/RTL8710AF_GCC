@@ -4,7 +4,7 @@
 
 [![Join the chat at https://gitter.im/iot-tech-now/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link](https://img.shields.io/gitter/room/badges/shields.svg)](https://gitter.im/iot-tech-now/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link)
 [![Build Status](https://travis-ci.org/RtlduinoMan/rtlduino_gcc_version.svg?branch=master)](https://travis-ci.org/RtlduinoMan/rtlduino_gcc_version)
-[![Documentation Status](https://img.shields.io/badge/docs-latest-yellow.svg?style=flat)](http://rtl8710.iot-tech-now.com/rtl8710/site/)
+[![Documentation Status](https://img.shields.io/badge/docs-latest-yellow.svg?style=flat)](http://rtlduino.iot-tech-now.com/)
 > 
 > ### A low power consumption, low cost,IOT WIFI solution of the operating system.
 >    GCC SDK RTL8710 basic version (including the window platform cygwin installation and Ubuntu platform Linux Installation routines), 
