@@ -1,0 +1,23 @@
+../../../component/os/os_dep/mailbox.o: \
+ ../../../component/os/os_dep/mailbox.c \
+ ../../../component/os/os_dep/include/mailbox.h \
+ ../../../component/soc/realtek/8195a/fwlib/hal_api.h \
+ ../../../component/soc/realtek/common/bsp/basic_types.h \
+ ../../../component/soc/realtek/8195a/fwlib/hal_irqn.h \
+ ../../../component/os/os_dep/include/osdep_api.h \
+ ../../../component/os/os_dep/include/os_timer.h \
+ ../../../component/soc/realtek/8195a/cmsis/device/diag.h \
+ ../inc/platform_autoconf.h \
+ ../../../component/os/os_dep/include/os_support.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/FreeRTOS.h \
+ ../inc/FreeRTOSConfig.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/projdefs.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/portable.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/../../Source/portable/GCC/ARM_CM3/portmacro.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/mpu_wrappers.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/timers.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/task.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/list.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/semphr.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/queue.h \
+ ../../../component/soc/realtek/8195a/fwlib/hal_util.h

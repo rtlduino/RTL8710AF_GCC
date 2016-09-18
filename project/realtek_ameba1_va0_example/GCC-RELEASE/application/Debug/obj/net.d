@@ -1,0 +1,30 @@
+../../../component/common/network/ssl/polarssl-1.3.8/library/net.o: \
+ ../../../component/common/network/ssl/polarssl-1.3.8/library/net.c \
+ ../../../component/common/network/ssl/polarssl-1.3.8/include/polarssl/config.h \
+ ../../../component/soc/realtek/common/bsp/section_config.h \
+ ../../../component/soc/realtek/common/bsp/basic_types.h \
+ ../inc/platform_autoconf.h \
+ ../../../component/common/network/ssl/ssl_ram_map/rom/rom_ssl_ram_map.h \
+ ../../../component/soc/realtek/common/bsp/basic_types.h \
+ ../../../component/common/api/platform/platform_stdlib.h \
+ ../../../component/soc/realtek/8195a/cmsis/device/diag.h \
+ ../../../component/soc/realtek/8195a/cmsis/device/strproc.h \
+ ../../../component/soc/realtek/8195a/fwlib/hal_misc.h \
+ ../../../component/soc/realtek/8195a/misc/rtl_std_lib/include/rtl_lib.h \
+ ../../../component/common/network/ssl/polarssl-1.3.8/include/polarssl/config_rsa.h \
+ ../../../component/common/network/ssl/polarssl-1.3.8/include/polarssl/check_config.h \
+ ../../../component/common/network/ssl/polarssl-1.3.8/include/polarssl/net.h \
+ ../../../component/common/network/lwip/lwip_v1.4.1/src/include/lwip/sockets.h \
+ ../../../component/common/network/lwip/lwip_v1.4.1/src/include/lwip/opt.h \
+ ../../../component/common/api/network/include/lwipopts.h \
+ ../../../component/common/api/platform/platform_stdlib.h \
+ ../inc/platform_opts.h \
+ ../../../component/common/network/lwip/lwip_v1.4.1/src/include/lwip/debug.h \
+ ../../../component/common/network/lwip/lwip_v1.4.1/src/include/lwip/arch.h \
+ ../../../component/common/network/lwip/lwip_v1.4.1/port/realtek/arch/cc.h \
+ ../../../component/common/network/lwip/lwip_v1.4.1/port/realtek/arch/cpu.h \
+ ../../../component/common/network/lwip/lwip_v1.4.1/src/include/ipv4/lwip/ip_addr.h \
+ ../../../component/common/network/lwip/lwip_v1.4.1/src/include/lwip/def.h \
+ ../../../component/common/network/lwip/lwip_v1.4.1/src/include/ipv4/lwip/inet.h \
+ ../../../component/common/network/lwip/lwip_v1.4.1/src/include/lwip/netdb.h \
+ ../../../component/soc/realtek/8195a/fwlib/ram_lib/usb_otg/include/errno.h

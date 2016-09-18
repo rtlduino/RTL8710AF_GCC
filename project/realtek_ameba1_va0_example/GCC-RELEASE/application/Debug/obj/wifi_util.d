@@ -1,0 +1,30 @@
+../../../component/common/api/wifi/wifi_util.o: \
+ ../../../component/common/api/wifi/wifi_util.c \
+ ../../../component/common/drivers/wlan/realtek/src/osdep/wireless.h \
+ ../../../component/common/drivers/wlan/realtek/src/osdep/wlan_intf.h \
+ ../../../component/common/drivers/wlan/realtek/include/autoconf.h \
+ ../inc/platform_opts.h \
+ ../../../component/common/drivers/wlan/realtek/include/wifi_constants.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/FreeRTOS.h \
+ ../inc/FreeRTOSConfig.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/projdefs.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/portable.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/../../Source/portable/GCC/ARM_CM3/portmacro.h \
+ ../../../component/os/freertos/freertos_v8.1.2/Source/include/mpu_wrappers.h \
+ ../../../component/common/api/platform/platform_stdlib.h \
+ ../../../component/soc/realtek/8195a/cmsis/device/diag.h \
+ ../inc/platform_autoconf.h \
+ ../../../component/soc/realtek/common/bsp/basic_types.h \
+ ../../../component/soc/realtek/8195a/cmsis/device/strproc.h \
+ ../../../component/soc/realtek/8195a/fwlib/hal_misc.h \
+ ../../../component/soc/realtek/8195a/misc/rtl_std_lib/include/rtl_lib.h \
+ ../../../component/common/api/wifi/wifi_conf.h \
+ ../../../component/common/drivers/wlan/realtek/include/wifi_structures.h \
+ ../../../component/common/drivers/wlan/realtek/include/wifi_constants.h \
+ ../../../component/common/api/platform/dlist.h \
+ ../../../component/common/api/wifi/wifi_util.h \
+ ../../../component/common/api/wifi/wifi_ind.h \
+ ../../../component/common/api/wifi/wifi_conf.h \
+ ../../../component/common/api/wifi/wifi_ind.h \
+ ../../../component/os/os_dep/include/osdep_service.h \
+ ../../../component/os/freertos/freertos_service.h
