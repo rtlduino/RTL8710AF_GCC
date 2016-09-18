@@ -1,0 +1,190 @@
+<html lang="en">
+<head>
+<title>Register Information Functions - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Register-Representation.html#Register-Representation" title="Register Representation">
+<link rel="prev" href="Register-Architecture-Functions-_0026-Variables.html#Register-Architecture-Functions-_0026-Variables" title="Register Architecture Functions &amp; Variables">
+<link rel="next" href="Register-and-Memory-Data.html#Register-and-Memory-Data" title="Register and Memory Data">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Register-Information-Functions"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Register-and-Memory-Data.html#Register-and-Memory-Data">Register and Memory Data</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Register-Architecture-Functions-_0026-Variables.html#Register-Architecture-Functions-_0026-Variables">Register Architecture Functions &amp; Variables</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Register-Representation.html#Register-Representation">Register Representation</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.6.3 Functions Giving Register Information</h4>
+
+<p><a name="index-g_t_0040code_007bgdbarch_007d-register-information-functions-284"></a>
+These functions return information about registers.
+
+<div class="defun">
+&mdash; Architecture Function: const char * <b>register_name</b> (<var>struct gdbarch *gdbarch, int regnum</var>)<var><a name="index-register_005fname-285"></a></var><br>
+<blockquote>
+        <p>This function should convert a register number (raw or pseudo) to a
+register name (as a C <code>const char *</code>).  This is used both to
+determine the name of a register for output and to work out the meaning
+of any register names used as input.  The function may also return
+<code>NULL</code>, to indicate that <var>regnum</var> is not a valid register.
+
+        <p>For example with the OpenRISC 1000, <span class="sc">gdb</span> registers 0-31 are the
+General Purpose Registers, register 32 is the program counter and
+register 33 is the supervision register (i.e. the processor status
+register), which map to the strings <code>"gpr00"</code> through
+<code>"gpr31"</code>, <code>"pc"</code> and <code>"sr"</code> respectively. This means
+that the <span class="sc">gdb</span> command <kbd>print $gpr5</kbd> should print the value of
+the OR1K general purpose register 5<a rel="footnote" href="#fn-1" name="fnd-1"><sup>1</sup></a>.
+
+        <p>The default value for this function is <code>NULL</code>, meaning
+undefined. It should always be defined.
+
+        <p>The access should be for the specified architecture, <var>gdbarch</var>.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Function: struct type * <b>register_type</b> (<var>struct gdbarch *gdbarch, int regnum</var>)<var><a name="index-register_005ftype-286"></a></var><br>
+<blockquote>
+        <p>Given a register number, this function identifies the type of data it
+may be holding, specified as a <code>struct type</code>.  <span class="sc">gdb</span> allows
+creation of arbitrary types, but a number of built in types are
+provided (<code>builtin_type_void</code>, <code>builtin_type_int32</code> etc),
+together with functions to derive types from these.
+
+        <p>Typically the program counter will have a type of &ldquo;pointer to
+function&rdquo; (it points to code), the frame pointer and stack pointer
+will have types of &ldquo;pointer to void&rdquo; (they point to data on the stack)
+and all other integer registers will have a type of 32-bit integer or
+64-bit integer.
+
+        <p>This information guides the formatting when displaying register
+information.  The default value is <code>NULL</code> meaning no information is
+available to guide formatting when displaying registers.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Function: void <b>print_registers_info</b> (<var>struct gdbarch *gdbarch, struct ui_file *file, struct frame_info *frame, int regnum, int all</var>)<var><a name="index-print_005fregisters_005finfo-287"></a></var><br>
+<blockquote>
+        <p>Define this function to print out one or all of the registers for the
+<span class="sc">gdb</span> <kbd>info registers</kbd> command.  The default value is the
+function <code>default_print_registers_info</code>, which uses the register
+type information (see <code>register_type</code> above) to determine how each
+register should be printed.  Define a custom version of this function
+for fuller control over how the registers are displayed.
+
+        <p>The access should be for the specified architecture, <var>gdbarch</var>,
+with output to the file specified by the User Interface
+Independent Output file handle, <var>file</var> (see <a href="UI_002dIndependent-Output.html#UI_002dIndependent-Output">UI-Independent Output&mdash;the <code>ui_out</code> Functions</a>).
+
+        <p>The registers should show their values in the frame specified by
+<var>frame</var>.  If <var>regnum</var> is -1 and <var>all</var> is zero, then all
+the &ldquo;significant&rdquo; registers should be shown (the implementer should
+decide which registers are &ldquo;significant&rdquo;). Otherwise only the value of
+the register specified by <var>regnum</var> should be output.  If
+<var>regnum</var> is -1 and <var>all</var> is non-zero (true), then the value of
+all registers should be shown.
+
+        <p>By default <code>default_print_registers_info</code> prints one register per
+line, and if <var>all</var> is zero omits floating-point registers.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Function: void <b>print_float_info</b> (<var>struct gdbarch *gdbarch, struct ui_file *file, struct frame_info *frame, const char *args</var>)<var><a name="index-print_005ffloat_005finfo-288"></a></var><br>
+<blockquote>
+        <p>Define this function to provide output about the floating point unit and
+registers for the <span class="sc">gdb</span> <kbd>info float</kbd> command respectively. 
+The default value is <code>NULL</code> (not defined), meaning no information
+will be provided.
+
+        <p>The <var>gdbarch</var> and <var>file</var> and <var>frame</var> arguments have the same
+meaning as in the <code>print_registers_info</code> function above. The string
+<var>args</var> contains any supplementary arguments to the <kbd>info float</kbd>
+command.
+
+        <p>Define this function if the target supports floating point operations.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Function: void <b>print_vector_info</b> (<var>struct gdbarch *gdbarch, struct ui_file *file, struct frame_info *frame, const char *args</var>)<var><a name="index-print_005fvector_005finfo-289"></a></var><br>
+<blockquote>
+        <p>Define this function to provide output about the vector unit and
+registers for the <span class="sc">gdb</span> <kbd>info vector</kbd> command respectively. 
+The default value is <code>NULL</code> (not defined), meaning no information
+will be provided.
+
+        <p>The <var>gdbarch</var>, <var>file</var> and <var>frame</var> arguments have the
+same meaning as in the <code>print_registers_info</code> function above.  The
+string <var>args</var> contains any supplementary arguments to the <kbd>info
+vector</kbd> command.
+
+        <p>Define this function if the target supports vector operations.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Function: int <b>register_reggroup_p</b> (<var>struct gdbarch *gdbarch, int regnum, struct reggroup *group</var>)<var><a name="index-register_005freggroup_005fp-290"></a></var><br>
+<blockquote>
+        <p><span class="sc">gdb</span> groups registers into different categories (general,
+vector, floating point etc).  This function, given a register,
+<var>regnum</var>, and group, <var>group</var>, returns 1 (true) if the register
+is in the group and 0 (false) otherwise.
+
+        <p>The information should be for the specified architecture,
+<var>gdbarch</var>
+
+        <p>The default value is the function <code>default_register_reggroup_p</code>
+which will do a reasonable job based on the type of the register (see
+the function <code>register_type</code> above), with groups for general
+purpose registers, floating point registers, vector registers and raw
+(i.e not pseudo) registers.
+
+        </blockquote></div>
+
+   <div class="footnote">
+<hr>
+<h4>Footnotes</h4><p class="footnote"><small>[<a name="fn-1" href="#fnd-1">1</a>]</small> 
+<a name="index-frame-pointer-291"></a><a name="index-g_t_0040kbd_007b_0024fp_007d-292"></a>Historically, <span class="sc">gdb</span> always had a concept of a frame pointer
+register, which could be accessed via the <span class="sc">gdb</span> variable,
+<kbd>$fp</kbd>.  That concept is now deprecated, recognizing that not all
+architectures have a frame pointer.  However if an architecture does
+have a frame pointer register, and defines a register or
+pseudo-register with the name <code>"fp"</code>, then that register will be
+used as the value of the <kbd>$fp</kbd> variable.</p>
+
+   <hr></div>
+
+   </body></html>
+

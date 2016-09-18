@@ -1,0 +1,133 @@
+<html lang="en">
+<head>
+<title>All About Stack Frames - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Frame-Interpretation.html#Frame-Interpretation" title="Frame Interpretation">
+<link rel="next" href="Frame-Handling-Terminology.html#Frame-Handling-Terminology" title="Frame Handling Terminology">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="All-About-Stack-Frames"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Frame-Handling-Terminology.html#Frame-Handling-Terminology">Frame Handling Terminology</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Frame-Interpretation.html#Frame-Interpretation">Frame Interpretation</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.7.1 All About Stack Frames</h4>
+
+<p><span class="sc">gdb</span> needs to understand the stack on which local (automatic)
+variables are stored.  The area of the stack containing all the local
+variables for a function invocation is known as the <dfn>stack frame</dfn>
+for that function (or colloquially just as the <dfn>frame</dfn>).  In turn the
+function that called the function will have its stack frame, and so on
+back through the chain of functions that have been called.
+
+   <p>Almost all architectures have one register dedicated to point to the
+end of the stack (the <dfn>stack pointer</dfn>).  Many have a second register
+which points to the start of the currently active stack frame (the
+<dfn>frame pointer</dfn>).  The specific arrangements for an architecture are
+a key part of the ABI.
+
+   <p>A diagram helps to explain this.  Here is a simple program to compute
+factorials:
+
+<pre class="smallexample">     #include &lt;stdio.h&gt;
+     int fact (int n)
+     {
+       if (0 == n)
+         {
+           return 1;
+         }
+       else
+         {
+           return n * fact (n - 1);
+         }
+     }
+     
+     main ()
+     {
+       int i;
+     
+       for (i = 0; i &lt; 10; i++)
+         {
+           int   f = fact (i);
+           printf ("%d! = %d\n", i, f);
+         }
+     }
+</pre>
+   <p>Consider the state of the stack when the code reaches line 6 after the
+main program has called <code>fact&nbsp;<!-- /@w -->(3)</code>.  The chain of function
+calls will be <code>main ()</code>, <code>fact&nbsp;<!-- /@w -->(3)</code>, <code>fact&nbsp;<!-- /@w -->(2)</code>, <code>fact&nbsp;(1)<!-- /@w --></code> and <code>fact&nbsp;<!-- /@w -->(0)</code>.
+
+   <p>In this illustration the stack is falling (as used for example by the
+OpenRISC 1000 ABI).  The stack pointer (SP) is at the end of the stack
+(lowest address) and the frame pointer (FP) is at the highest address
+in the current stack frame.  The following diagram shows how the stack
+looks.
+
+<div align="center"><img src="stack_frame.png" alt="stack_frame.png"></div>
+
+   <p>In each stack frame, offset 0 from the stack pointer is the frame
+pointer of the previous frame and offset 4 (this is illustrating a
+32-bit architecture) from the stack pointer is the return address. 
+Local variables are indexed from the frame pointer, with negative
+indexes.  In the function <code>fact</code>, offset -4 from the frame
+pointer is the argument <var>n</var>.  In the <code>main</code> function, offset
+-4 from the frame pointer is the local variable <var>i</var> and offset -8
+from the frame pointer is the local variable <var>f</var><a rel="footnote" href="#fn-1" name="fnd-1"><sup>1</sup></a>.
+
+   <p>It is very easy to get confused when examining stacks.  <span class="sc">gdb</span>
+has terminology it uses rigorously throughout.  The stack frame of the
+function currently executing, or where execution stopped is numbered
+zero.  In this example frame #0 is the stack frame of the call to
+<code>fact&nbsp;<!-- /@w -->(0)</code>.  The stack frame of its calling function
+(<code>fact&nbsp;<!-- /@w -->(1)</code> in this case) is numbered #1 and so on back
+through the chain of calls.
+
+   <p>The main <span class="sc">gdb</span> data structure describing frames is
+ <code>struct&nbsp;frame_info<!-- /@w --></code>.  It is not used directly, but only via
+its accessor functions.  <code>frame_info</code> includes information about
+the registers in the frame and a pointer to the code of the function
+with which the frame is associated.  The entire stack is represented as
+a linked list of <code>frame_info</code> structs.
+
+   <div class="footnote">
+<hr>
+<h4>Footnotes</h4><p class="footnote"><small>[<a name="fn-1" href="#fnd-1">1</a>]</small> This is
+a simplified example for illustrative purposes only.  Good optimizing
+compilers would not put anything on the stack for such simple
+functions.  Indeed they might eliminate the recursion and use of the
+stack entirely!</p>
+
+   <hr></div>
+
+   </body></html>
+

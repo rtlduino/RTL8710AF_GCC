@@ -1,0 +1,101 @@
+<html lang="en">
+<head>
+<title>Frame Handling Terminology - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Frame-Interpretation.html#Frame-Interpretation" title="Frame Interpretation">
+<link rel="prev" href="All-About-Stack-Frames.html#All-About-Stack-Frames" title="All About Stack Frames">
+<link rel="next" href="Prologue-Caches.html#Prologue-Caches" title="Prologue Caches">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Frame-Handling-Terminology"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Prologue-Caches.html#Prologue-Caches">Prologue Caches</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="All-About-Stack-Frames.html#All-About-Stack-Frames">All About Stack Frames</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Frame-Interpretation.html#Frame-Interpretation">Frame Interpretation</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.7.2 Frame Handling Terminology</h4>
+
+<p>It is easy to get confused when referencing stack frames.  <span class="sc">gdb</span>
+uses some precise terminology.
+
+     <ul>
+<li><a name="index-THIS-frame-310"></a><a name="index-stack-frame_002c-definition-of-THIS-frame-311"></a><a name="index-frame_002c-definition-of-THIS-frame-312"></a><dfn>THIS</dfn> frame is the frame currently under consideration.
+
+     <li><a name="index-NEXT-frame-313"></a><a name="index-stack-frame_002c-definition-of-NEXT-frame-314"></a><a name="index-frame_002c-definition-of-NEXT-frame-315"></a>The <dfn>NEXT</dfn> frame, also sometimes called the inner or newer frame is the
+frame of the function called by the function of THIS frame.
+
+     <li><a name="index-PREVIOUS-frame-316"></a><a name="index-stack-frame_002c-definition-of-PREVIOUS-frame-317"></a><a name="index-frame_002c-definition-of-PREVIOUS-frame-318"></a>The <dfn>PREVIOUS</dfn> frame, also sometimes called the outer or older frame is
+the frame of the function which called the function of THIS frame.
+
+   </ul>
+
+   <p>So in the example in the previous section (see <a href="All-About-Stack-Frames.html#All-About-Stack-Frames">All About Stack Frames</a>), if THIS frame is #3 (the call to
+<code>fact&nbsp;<!-- /@w -->(3)</code>), the NEXT frame is frame #2 (the call to
+<code>fact&nbsp;<!-- /@w -->(2)</code>) and the PREVIOUS frame is frame #4 (the call to
+<code>main&nbsp;<!-- /@w -->()</code>).
+
+   <p><a name="index-innermost-frame-319"></a><a name="index-stack-frame_002c-definition-of-innermost-frame-320"></a><a name="index-frame_002c-definition-of-innermost-frame-321"></a>The <dfn>innermost</dfn> frame is the frame of the current executing
+function, or where the program stopped, in this example, in the middle
+of the call to <code>fact&nbsp;(0))<!-- /@w --></code>.  It is always numbered frame #0.
+
+   <p><a name="index-base-of-a-frame-322"></a><a name="index-stack-frame_002c-definition-of-base-of-a-frame-323"></a><a name="index-frame_002c-definition-of-base-of-a-frame-324"></a>The <dfn>base</dfn> of a frame is the address immediately before the start
+of the NEXT frame.  For a stack which grows down in memory (a
+<dfn>falling</dfn> stack) this will be the lowest address and for a stack
+which grows up in memory (a <dfn>rising</dfn> stack) this will be the
+highest address in the frame.
+
+   <p><span class="sc">gdb</span> functions to analyze the stack are typically given a
+pointer to the NEXT frame to determine information about THIS
+frame.  Information about THIS frame includes data on where the
+registers of the PREVIOUS frame are stored in this stack frame.  In
+this example the frame pointer of the PREVIOUS frame is stored at
+offset 0 from the stack pointer of THIS frame.
+
+   <p><a name="index-unwinding-325"></a><a name="index-stack-frame_002c-definition-of-unwinding-326"></a><a name="index-frame_002c-definition-of-unwinding-327"></a>The process whereby a function is given a pointer to the NEXT
+frame to work out information about THIS frame is referred to as
+<dfn>unwinding</dfn>.  The <span class="sc">gdb</span> functions involved in this typically
+include unwind in their name.
+
+   <p><a name="index-sniffing-328"></a><a name="index-stack-frame_002c-definition-of-sniffing-329"></a><a name="index-frame_002c-definition-of-sniffing-330"></a>The process of analyzing a target to determine the information that
+should go in struct frame_info is called <dfn>sniffing</dfn>.  The functions
+that carry this out are called sniffers and typically include sniffer
+in their name.  More than one sniffer may be required to extract all
+the information for a particular frame.
+
+   <p><a name="index-sentinel-frame-331"></a><a name="index-stack-frame_002c-definition-of-sentinel-frame-332"></a><a name="index-frame_002c-definition-of-sentinel-frame-333"></a>Because so many functions work using the NEXT frame, there is an issue
+about addressing the innermost frame&mdash;it has no NEXT frame.  To solve
+this <span class="sc">gdb</span> creates a dummy frame #-1, known as the
+<dfn>sentinel</dfn> frame.
+
+   </body></html>
+

@@ -1,0 +1,111 @@
+<html lang="en">
+<head>
+<title>Looking Up an Existing Architecture - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Initialize-New-Architecture.html#Initialize-New-Architecture" title="Initialize New Architecture">
+<link rel="prev" href="How-an-Architecture-is-Represented.html#How-an-Architecture-is-Represented" title="How an Architecture is Represented">
+<link rel="next" href="Creating-a-New-Architecture.html#Creating-a-New-Architecture" title="Creating a New Architecture">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Looking-Up-an-Existing-Architecture"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Creating-a-New-Architecture.html#Creating-a-New-Architecture">Creating a New Architecture</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="How-an-Architecture-is-Represented.html#How-an-Architecture-is-Represented">How an Architecture is Represented</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Initialize-New-Architecture.html#Initialize-New-Architecture">Initialize New Architecture</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.2.2 Looking Up an Existing Architecture</h4>
+
+<p><a name="index-g_t_0040code_007bgdbarch_007d-lookup-229"></a>
+The initialization function has this prototype:
+
+<pre class="smallexample">     static struct gdbarch *
+     <var>arch</var>_gdbarch_init (struct gdbarch_info <var>info</var>,
+                              struct gdbarch_list *<var>arches</var>)
+</pre>
+   <p>The <var>info</var> argument contains parameters used to select the correct
+architecture, and <var>arches</var> is a list of architectures which
+have already been created with the same <code>bfd_arch_</code><var>arch</var>
+value.
+
+   <p>The initialization function should first make sure that <var>info</var>
+is acceptable, and return <code>NULL</code> if it is not.  Then, it should
+search through <var>arches</var> for an exact match to <var>info</var>, and
+return one if found.  Lastly, if no exact match was found, it should
+create a new architecture based on <var>info</var> and return it.
+
+   <p><a name="index-gdbarch_005flist_005flookup_005fby_005finfo-230"></a><a name="index-g_t_0040code_007bgdbarch_005finfo_007d-231"></a>The lookup is done using <code>gdbarch_list_lookup_by_info</code>.  It is
+passed the list of existing architectures, <var>arches</var>, and the
+<code>struct gdbarch_info</code>, <var>info</var>, and returns the first matching
+architecture it finds, or <code>NULL</code> if none are found.  If an
+architecture is found it can be returned as the result from the
+initialization function, otherwise a new <code>struct gdbach</code> will need
+to be created.
+
+   <p>The struct gdbarch_info has the following components:
+
+<pre class="smallexample">     struct gdbarch_info
+     {
+        const struct bfd_arch_info *bfd_arch_info;
+        int                         byte_order;
+        bfd                        *abfd;
+        struct gdbarch_tdep_info   *tdep_info;
+        enum gdb_osabi              osabi;
+        const struct target_desc   *target_desc;
+     };
+</pre>
+   <p><a name="index-bfd_005farch_005finfo-232"></a>The <code>bfd_arch_info</code> member holds the key details about the
+architecture.  The <code>byte_order</code> member is a value in an
+enumeration indicating the endianism.  The <code>abfd</code> member is a
+pointer to the full <span class="sc">bfd</span>, the <code>tdep_info</code> member is
+additional custom target specific information, <code>osabi</code> identifies
+which (if any) of a number of operating specific ABIs are used by this
+architecture and the <code>target_desc</code> member is a set of name-value
+pairs with information about register usage in this target.
+
+   <p>When the <code>struct gdbarch</code> initialization function is called, not
+all the fields are provided&mdash;only those which can be deduced from the
+<span class="sc">bfd</span>.  The <code>struct gdbarch_info</code>, <var>info</var> is used as a
+look-up key with the list of existing architectures, <var>arches</var> to
+see if a suitable architecture already exists.  The <var>tdep_info</var>,
+<var>osabi</var> and <var>target_desc</var> fields may be added before this
+lookup to refine the search.
+
+   <p>Only information in <var>info</var> should be used to choose the new
+architecture.  Historically, <var>info</var> could be sparse, and
+defaults would be collected from the first element on <var>arches</var>. 
+However, <span class="sc">gdb</span> now fills in <var>info</var> more thoroughly,
+so new <code>gdbarch</code> initialization functions should not take
+defaults from <var>arches</var>.
+
+   </body></html>
+

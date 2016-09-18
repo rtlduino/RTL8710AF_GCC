@@ -1,0 +1,130 @@
+<html lang="en">
+<head>
+<title>Functions Creating Dummy Frames - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Inferior-Call-Setup.html#Inferior-Call-Setup" title="Inferior Call Setup">
+<link rel="prev" href="About-Dummy-Frames.html#About-Dummy-Frames" title="About Dummy Frames">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Functions-Creating-Dummy-Frames"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="About-Dummy-Frames.html#About-Dummy-Frames">About Dummy Frames</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Inferior-Call-Setup.html#Inferior-Call-Setup">Inferior Call Setup</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.8.2 Functions Creating Dummy Frames</h4>
+
+<p>The following functions provide the functionality to set up such
+<dfn>dummy</dfn> stack frames.
+
+<div class="defun">
+&mdash; Architecture Function: CORE_ADDR <b>push_dummy_call</b> (<var>struct gdbarch *gdbarch, struct value *function, struct regcache *regcache, CORE_ADDR bp_addr, int nargs, struct value **args, CORE_ADDR sp, int struct_return, CORE_ADDR struct_addr</var>)<var><a name="index-push_005fdummy_005fcall-355"></a></var><br>
+<blockquote>
+        <p>This function sets up a dummy stack frame for the function about to be
+called.  <code>push_dummy_call</code> is given the arguments to be passed
+and must copy them into registers or push them on to the stack as
+appropriate for the ABI.
+
+        <p><var>function</var> is a pointer to the function
+that will be called and <var>regcache</var> the register cache from which
+values should be obtained.  <var>bp_addr</var> is the address to which the
+function should return (which is breakpointed, so <span class="sc">gdb</span> can
+regain control, hence the name).  <var>nargs</var> is the number of
+arguments to pass and <var>args</var> an array containing the argument
+values.  <var>struct_return</var> is non-zero (true) if the function returns
+a structure, and if so <var>struct_addr</var> is the address in which the
+structure should be returned.
+
+        <p>After calling this function, <span class="sc">gdb</span> will pass control to the
+target at the address of the function, which will find the stack and
+registers set up just as expected.
+
+        <p>The default value of this function is <code>NULL</code> (undefined).  If the
+function is not defined, then <span class="sc">gdb</span> will not allow the user to
+call functions within the target being debugged.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Function: struct frame_id <b>unwind_dummy_id</b> (<var>struct gdbarch *gdbarch, struct frame_info *next_frame</var>)<var><a name="index-unwind_005fdummy_005fid-356"></a></var><br>
+<blockquote>
+        <p>This is the inverse of <code>push_dummy_call</code> which restores the stack
+pointer and program counter after a call to evaluate a function using
+a dummy stack frame.  The result is a <code>struct&nbsp;frame_id<!-- /@w --></code>, which
+contains the value of the stack pointer and program counter to be
+used.
+
+        <p>The NEXT frame pointer is provided as argument,
+<var>next_frame</var>.  THIS frame is the frame of the dummy function,
+which can be unwound, to yield the required stack pointer and program
+counter from the PREVIOUS frame.
+
+        <p>The default value is <code>NULL</code> (undefined).  If <code>push_dummy_call</code> is
+defined, then this function should also be defined.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Function: CORE_ADDR <b>push_dummy_code</b> (<var>struct gdbarch *gdbarch, CORE_ADDR sp, CORE_ADDR funaddr, struct value **args, int nargs, struct type *value_type, CORE_ADDR *real_pc, CORE_ADDR *bp_addr, struct regcache *regcache</var>)<var><a name="index-push_005fdummy_005fcode-357"></a></var><br>
+<blockquote>
+        <p>If this function is not defined (its default value is <code>NULL</code>), a dummy
+call will use the entry point of the currently loaded code on the
+target as its return address.  A temporary breakpoint will be set
+there, so the location must be writable and have room for a
+breakpoint.
+
+        <p>It is possible that this default is not suitable.  It might not be
+writable (in ROM possibly), or the ABI might require code to be
+executed on return from a call to unwind the stack before the
+breakpoint is encountered.
+
+        <p>If either of these is the case, then push_dummy_code should be defined
+to push an instruction sequence onto the end of the stack to which the
+dummy call should return.
+
+        <p>The arguments are essentially the same as those to
+<code>push_dummy_call</code>.  However the function is provided with the
+type of the function result, <var>value_type</var>, <var>bp_addr</var> is used
+to return a value (the address at which the breakpoint instruction
+should be inserted) and <var>real pc</var> is used to specify the resume
+address when starting the call sequence.  The function should return
+the updated innermost stack address.
+
+        <blockquote>
+<em>Note:</em> This does require that code in the stack can be executed. 
+Some Harvard architectures may not allow this. 
+</blockquote>
+
+        </blockquote></div>
+
+   </body></html>
+

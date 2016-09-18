@@ -1,0 +1,131 @@
+<html lang="en">
+<head>
+<title>Functions and Variable to Analyze Frames - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Frame-Interpretation.html#Frame-Interpretation" title="Frame Interpretation">
+<link rel="prev" href="Prologue-Caches.html#Prologue-Caches" title="Prologue Caches">
+<link rel="next" href="Functions-to-Access-Frame-Data.html#Functions-to-Access-Frame-Data" title="Functions to Access Frame Data">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Functions-and-Variable-to-Analyze-Frames"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Functions-to-Access-Frame-Data.html#Functions-to-Access-Frame-Data">Functions to Access Frame Data</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Prologue-Caches.html#Prologue-Caches">Prologue Caches</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Frame-Interpretation.html#Frame-Interpretation">Frame Interpretation</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.7.4 Functions and Variable to Analyze Frames</h4>
+
+<p>These struct <code>gdbarch</code> functions and variable should be defined
+to provide analysis of the stack frame and allow it to be adjusted as
+required.
+
+<div class="defun">
+&mdash; Architecture Function: CORE_ADDR <b>skip_prologue</b> (<var>struct gdbarch *gdbarch, CORE_ADDR pc</var>)<var><a name="index-skip_005fprologue-337"></a></var><br>
+<blockquote>
+        <p>The prologue of a function is the code at the beginning of the
+function which sets up the stack frame, saves the return address
+etc.  The code representing the behavior of the function starts after
+the prologue.
+
+        <p>This function skips past the prologue of a function if the program
+counter, <var>pc</var>, is within the prologue of a function.  The result is
+the program counter immediately after the prologue.  With modern
+optimizing compilers, this may be a far from trivial exercise.  However
+the required information may be within the binary as DWARF2 debugging
+information, making the job much easier.
+
+        <p>The default value is <code>NULL</code> (not defined).  This function should always
+be provided, but can take advantage of DWARF2 debugging information,
+if that is available.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Function: int <b>inner_than</b> (<var>CORE_ADDR lhs, CORE_ADDR rhs</var>)<var><a name="index-inner_005fthan-338"></a></var><br>
+<blockquote><p><a name="index-core_005faddr_005flessthan-339"></a><a name="index-core_005faddr_005fgreaterthan-340"></a>
+Given two frame or stack pointers, return non-zero (true) if the first
+represents the <dfn>inner</dfn> stack frame and 0 (false) otherwise.  This
+is used to determine whether the target has a stack which grows up in
+memory (rising stack) or grows down in memory (falling stack). 
+See <a href="All-About-Stack-Frames.html#All-About-Stack-Frames">All About Stack Frames</a>, for an
+explanation of <dfn>inner</dfn> frames.
+
+        <p>The default value of this function is <code>NULL</code> and it should always
+be defined.  However for almost all architectures one of the built-in
+functions can be used: <code>core_addr_lessthan</code> (for stacks growing
+down in memory) or <code>core_addr_greaterthan</code> (for stacks growing up
+in memory).
+
+        </blockquote></div>
+
+   <p><a name="frame_005falign"></a>
+
+<div class="defun">
+&mdash; Architecture Function: CORE_ADDR <b>frame_align</b> (<var>struct gdbarch *gdbarch, CORE_ADDR address</var>)<var><a name="index-frame_005falign-341"></a></var><br>
+<blockquote><p><a name="index-align_005fdown-342"></a><a name="index-align_005fup-343"></a>
+The architecture may have constraints on how its frames are
+aligned.  For example the OpenRISC 1000 ABI requires stack frames to be
+double-word aligned, but 32-bit versions of the architecture allocate
+single-word values to the stack.  Thus extra padding may be needed at
+the end of a stack frame.
+
+        <p>Given a proposed address for the stack pointer, this function
+returns a suitably aligned address (by expanding the stack frame).
+
+        <p>The default value is <code>NULL</code> (undefined).  This function should be defined
+for any architecture where it is possible the stack could become
+misaligned.  The utility functions <code>align_down</code> (for falling
+stacks) and <code>align_up</code> (for rising stacks) will facilitate the
+implementation of this function.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Variable: int <b>frame_red_zone_size</b><var><a name="index-frame_005fred_005fzone_005fsize-344"></a></var><br>
+<blockquote>
+        <p>Some ABIs reserve space beyond the end of the stack for use by leaf
+functions without prologue or epilogue or by exception handlers (for
+example the OpenRISC 1000).
+
+        <p>This is known as a <dfn>red zone</dfn> (AMD terminology).  The <span class="sc">amd64</span>
+(nee x86-64) ABI documentation refers to the <dfn>red zone</dfn> when
+describing this scratch area.
+
+        <p>The default value is 0.  Set this field if the architecture has such a
+red zone.  The value must be aligned as required by the ABI (see
+<code>frame_align</code> above for an explanation of stack frame alignment).
+
+        </blockquote></div>
+
+   </body></html>
+

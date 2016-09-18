@@ -1,0 +1,79 @@
+<html lang="en">
+<head>
+<title>Prologue Caches - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Frame-Interpretation.html#Frame-Interpretation" title="Frame Interpretation">
+<link rel="prev" href="Frame-Handling-Terminology.html#Frame-Handling-Terminology" title="Frame Handling Terminology">
+<link rel="next" href="Functions-and-Variable-to-Analyze-Frames.html#Functions-and-Variable-to-Analyze-Frames" title="Functions and Variable to Analyze Frames">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Prologue-Caches"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Functions-and-Variable-to-Analyze-Frames.html#Functions-and-Variable-to-Analyze-Frames">Functions and Variable to Analyze Frames</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Frame-Handling-Terminology.html#Frame-Handling-Terminology">Frame Handling Terminology</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Frame-Interpretation.html#Frame-Interpretation">Frame Interpretation</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.7.3 Prologue Caches</h4>
+
+<p><a name="index-function-prologue-334"></a><a name="index-prologue-of-a-function-335"></a>All the frame sniffing functions typically examine the code at the
+start of the corresponding function, to determine the state of
+registers.  The ABI will save old values and set new values of key
+registers at the start of each function in what is known as the
+function <dfn>prologue</dfn>.
+
+   <p><a name="index-prologue-cache-336"></a>For any particular stack frame this data does not change, so all the
+standard unwinding functions, in addition to receiving a pointer to
+the NEXT frame as their first argument, receive a pointer to a
+<dfn>prologue cache</dfn> as their second argument.  This can be used to store
+values associated with a particular frame, for reuse on subsequent
+calls involving the same frame.
+
+   <p>It is up to the user to define the structure used (it is a
+<code>void&nbsp;<!-- /@w -->*</code> pointer) and arrange allocation and deallocation of
+storage.  However for general use, <span class="sc">gdb</span> provides
+<code>struct&nbsp;trad_frame_cache<!-- /@w --></code>, with a set of accessor
+routines.  This structure holds the stack and code address of
+THIS frame, the base address of the frame, a pointer to the
+struct <code>frame_info</code> for the NEXT frame and details of
+where the registers of the PREVIOUS frame may be found in THIS
+frame.
+
+   <p>Typically the first time any sniffer function is called with NEXT
+frame, the prologue sniffer for THIS frame will be <code>NULL</code>.  The
+sniffer will analyze the frame, allocate a prologue cache structure
+and populate it.  Subsequent calls using the same NEXT frame will
+pass in this prologue cache, so the data can be returned with no
+additional analysis.
+
+   </body></html>
+

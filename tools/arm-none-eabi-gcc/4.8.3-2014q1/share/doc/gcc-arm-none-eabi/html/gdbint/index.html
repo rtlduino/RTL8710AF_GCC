@@ -1,0 +1,370 @@
+<html lang="en">
+<head>
+<title>GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="#Top">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License".-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+This file documents the internals of the GNU debugger <span class="sc">gdb</span>.
+
+   <p>Copyright &copy; 1990-2013 Free Software Foundation, Inc. 
+Contributed by Cygnus Solutions.  Written by John Gilmore. 
+Second Edition by Stan Shebs.
+
+   <p>Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled &ldquo;GNU
+Free Documentation License&rdquo;.
+
+<div class="contents">
+<h2>Table of Contents</h2>
+<ul>
+<li><a name="toc_Top" href="index.html#Top">Scope of this Document</a>
+<li><a name="toc_Summary" href="Summary.html#Summary">1 Summary</a>
+<ul>
+<li><a href="Requirements.html#Requirements">1.1 Requirements</a>
+<li><a href="Contributors.html#Contributors">1.2 Contributors</a>
+</li></ul>
+<li><a name="toc_Overall-Structure" href="Overall-Structure.html#Overall-Structure">2 Overall Structure</a>
+<ul>
+<li><a href="Overall-Structure.html#Overall-Structure">2.1 The Symbol Side</a>
+<li><a href="Overall-Structure.html#Overall-Structure">2.2 The Target Side</a>
+<li><a href="Overall-Structure.html#Overall-Structure">2.3 Configurations</a>
+<li><a href="Overall-Structure.html#Overall-Structure">2.4 Source Tree Structure</a>
+</li></ul>
+<li><a name="toc_Algorithms" href="Algorithms.html#Algorithms">3 Algorithms</a>
+<ul>
+<li><a href="Algorithms.html#Algorithms">3.1 Prologue Analysis</a>
+<li><a href="Algorithms.html#Algorithms">3.2 Breakpoint Handling</a>
+<li><a href="Algorithms.html#Algorithms">3.3 Single Stepping</a>
+<li><a href="Algorithms.html#Algorithms">3.4 Signal Handling</a>
+<li><a href="Algorithms.html#Algorithms">3.5 Thread Handling</a>
+<li><a href="Algorithms.html#Algorithms">3.6 Inferior Function Calls</a>
+<li><a href="Algorithms.html#Algorithms">3.7 Longjmp Support</a>
+<li><a href="Algorithms.html#Algorithms">3.8 Watchpoints</a>
+<ul>
+<li><a href="Algorithms.html#Algorithms">3.8.1 Watchpoints and Threads</a>
+<li><a href="Algorithms.html#Algorithms">3.8.2 x86 Watchpoints</a>
+</li></ul>
+<li><a href="Algorithms.html#Algorithms">3.9 Checkpoints</a>
+<li><a href="Algorithms.html#Algorithms">3.10 Observing changes in <span class="sc">gdb</span> internals</a>
+</li></ul>
+<li><a name="toc_User-Interface" href="User-Interface.html#User-Interface">4 User Interface</a>
+<ul>
+<li><a href="User-Interface.html#User-Interface">4.1 Command Interpreter</a>
+<li><a href="User-Interface.html#User-Interface">4.2 UI-Independent Output&mdash;the <code>ui_out</code> Functions</a>
+<ul>
+<li><a href="User-Interface.html#User-Interface">4.2.1 Overview and Terminology</a>
+<li><a href="User-Interface.html#User-Interface">4.2.2 General Conventions</a>
+<li><a href="User-Interface.html#User-Interface">4.2.3 Table, Tuple and List Functions</a>
+<li><a href="User-Interface.html#User-Interface">4.2.4 Item Output Functions</a>
+<li><a href="User-Interface.html#User-Interface">4.2.5 Utility Output Functions</a>
+<li><a href="User-Interface.html#User-Interface">4.2.6 Examples of Use of <code>ui_out</code> functions</a>
+</li></ul>
+<li><a href="User-Interface.html#User-Interface">4.3 Console Printing</a>
+<li><a href="User-Interface.html#User-Interface">4.4 TUI</a>
+</li></ul>
+<li><a name="toc_libgdb" href="libgdb.html#libgdb">5 libgdb</a>
+<ul>
+<li><a href="libgdb.html#libgdb">5.1 libgdb 1.0</a>
+<li><a href="libgdb.html#libgdb">5.2 libgdb 2.0</a>
+<li><a href="libgdb.html#libgdb">5.3 The <code>libgdb</code> Model</a>
+<li><a href="libgdb.html#libgdb">5.4 CLI support</a>
+<li><a href="libgdb.html#libgdb">5.5 <code>libgdb</code> components</a>
+</li></ul>
+<li><a name="toc_Values" href="Values.html#Values">6 Values</a>
+<ul>
+<li><a href="Values.html#Values">6.1 Values</a>
+</li></ul>
+<li><a name="toc_Stack-Frames" href="Stack-Frames.html#Stack-Frames">7 Stack Frames</a>
+<ul>
+<li><a href="Stack-Frames.html#Stack-Frames">7.1 Selecting an Unwinder</a>
+<li><a href="Stack-Frames.html#Stack-Frames">7.2 Unwinding the Frame ID</a>
+<li><a href="Stack-Frames.html#Stack-Frames">7.3 Unwinding Registers</a>
+</li></ul>
+<li><a name="toc_Symbol-Handling" href="Symbol-Handling.html#Symbol-Handling">8 Symbol Handling</a>
+<ul>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.1 Symbol Reading</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.2 Partial Symbol Tables</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.3 Types</a>
+<ul>
+<li><a href="Symbol-Handling.html#Symbol-Handling">Fundamental Types (e.g., <code>FT_VOID</code>, <code>FT_BOOLEAN</code>).</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">Type Codes (e.g., <code>TYPE_CODE_PTR</code>, <code>TYPE_CODE_ARRAY</code>).</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">Builtin Types (e.g., <code>builtin_type_void</code>, <code>builtin_type_char</code>).</a>
+</li></ul>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.4 Object File Formats</a>
+<ul>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.4.1 a.out</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.4.2 COFF</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.4.3 ECOFF</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.4.4 XCOFF</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.4.5 PE</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.4.6 ELF</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.4.7 SOM</a>
+</li></ul>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.5 Debugging File Formats</a>
+<ul>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.5.1 stabs</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.5.2 COFF</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.5.3 Mips debug (Third Eye)</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.5.4 DWARF 2</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.5.5 Compressed DWARF 2</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.5.6 DWARF 3</a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.5.7 SOM</a>
+</li></ul>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.6 Adding a New Symbol Reader to <span class="sc">gdb</span></a>
+<li><a href="Symbol-Handling.html#Symbol-Handling">8.7 Memory Management for Symbol Files</a>
+</li></ul>
+<li><a name="toc_Language-Support" href="Language-Support.html#Language-Support">9 Language Support</a>
+<ul>
+<li><a href="Language-Support.html#Language-Support">9.1 Adding a Source Language to <span class="sc">gdb</span></a>
+</li></ul>
+<li><a name="toc_Host-Definition" href="Host-Definition.html#Host-Definition">10 Host Definition</a>
+<ul>
+<li><a href="Host-Definition.html#Host-Definition">10.1 Adding a New Host</a>
+<li><a href="Host-Definition.html#Host-Definition">10.2 Host Conditionals</a>
+</li></ul>
+<li><a name="toc_Target-Architecture-Definition" href="Target-Architecture-Definition.html#Target-Architecture-Definition">11 Target Architecture Definition</a>
+<ul>
+<li><a href="OS-ABI-Variant-Handling.html#OS-ABI-Variant-Handling">11.1 Operating System ABI Variant Handling</a>
+<li><a href="Initialize-New-Architecture.html#Initialize-New-Architecture">11.2 Initializing a New Architecture</a>
+<ul>
+<li><a href="How-an-Architecture-is-Represented.html#How-an-Architecture-is-Represented">11.2.1 How an Architecture is Represented</a>
+<li><a href="Looking-Up-an-Existing-Architecture.html#Looking-Up-an-Existing-Architecture">11.2.2 Looking Up an Existing Architecture</a>
+<li><a href="Creating-a-New-Architecture.html#Creating-a-New-Architecture">11.2.3 Creating a New Architecture</a>
+</li></ul>
+<li><a href="Registers-and-Memory.html#Registers-and-Memory">11.3 Registers and Memory</a>
+<li><a href="Pointers-and-Addresses.html#Pointers-and-Addresses">11.4 Pointers Are Not Always Addresses</a>
+<li><a href="Address-Classes.html#Address-Classes">11.5 Address Classes</a>
+<li><a href="Register-Representation.html#Register-Representation">11.6 Register Representation</a>
+<ul>
+<li><a href="Raw-and-Cooked-Registers.html#Raw-and-Cooked-Registers">11.6.1 Raw and Cooked Registers</a>
+<li><a href="Register-Architecture-Functions-_0026-Variables.html#Register-Architecture-Functions-_0026-Variables">11.6.2 Functions and Variables Specifying the Register Architecture</a>
+<li><a href="Register-Information-Functions.html#Register-Information-Functions">11.6.3 Functions Giving Register Information</a>
+<li><a href="Register-and-Memory-Data.html#Register-and-Memory-Data">11.6.4 Using Different Register and Memory Data Representations</a>
+<li><a href="Register-Caching.html#Register-Caching">11.6.5 Register Caching</a>
+</li></ul>
+<li><a href="Frame-Interpretation.html#Frame-Interpretation">11.7 Frame Interpretation</a>
+<ul>
+<li><a href="All-About-Stack-Frames.html#All-About-Stack-Frames">11.7.1 All About Stack Frames</a>
+<li><a href="Frame-Handling-Terminology.html#Frame-Handling-Terminology">11.7.2 Frame Handling Terminology</a>
+<li><a href="Prologue-Caches.html#Prologue-Caches">11.7.3 Prologue Caches</a>
+<li><a href="Functions-and-Variable-to-Analyze-Frames.html#Functions-and-Variable-to-Analyze-Frames">11.7.4 Functions and Variable to Analyze Frames</a>
+<li><a href="Functions-to-Access-Frame-Data.html#Functions-to-Access-Frame-Data">11.7.5 Functions to Access Frame Data</a>
+<li><a href="Analyzing-Stacks_002d_002d_002dFrame-Sniffers.html#Analyzing-Stacks_002d_002d_002dFrame-Sniffers">11.7.6 Analyzing Stacks&mdash;Frame Sniffers</a>
+</li></ul>
+<li><a href="Inferior-Call-Setup.html#Inferior-Call-Setup">11.8 Inferior Call Setup</a>
+<ul>
+<li><a href="About-Dummy-Frames.html#About-Dummy-Frames">11.8.1 About Dummy Frames</a>
+<li><a href="Functions-Creating-Dummy-Frames.html#Functions-Creating-Dummy-Frames">11.8.2 Functions Creating Dummy Frames</a>
+</li></ul>
+<li><a href="Adding-support-for-debugging-core-files.html#Adding-support-for-debugging-core-files">11.9 Adding support for debugging core files</a>
+<li><a href="Defining-Other-Architecture-Features.html#Defining-Other-Architecture-Features">11.10 Defining Other Architecture Features</a>
+<li><a href="Adding-a-New-Target.html#Adding-a-New-Target">11.11 Adding a New Target</a>
+</li></ul>
+<li><a name="toc_Target-Descriptions" href="Target-Descriptions.html#Target-Descriptions">12 Target Descriptions</a>
+<ul>
+<li><a href="Target-Descriptions-Implementation.html#Target-Descriptions-Implementation">12.1 Target Descriptions Implementation</a>
+<li><a href="Adding-Target-Described-Register-Support.html#Adding-Target-Described-Register-Support">12.2 Adding Target Described Register Support</a>
+</li></ul>
+<li><a name="toc_Target-Vector-Definition" href="Target-Vector-Definition.html#Target-Vector-Definition">13 Target Vector Definition</a>
+<ul>
+<li><a href="Managing-Execution-State.html#Managing-Execution-State">13.1 Managing Execution State</a>
+<li><a href="Existing-Targets.html#Existing-Targets">13.2 Existing Targets</a>
+<ul>
+<li><a href="Existing-Targets.html#Existing-Targets">13.2.1 File Targets</a>
+<li><a href="Existing-Targets.html#Existing-Targets">13.2.2 Standard Protocol and Remote Stubs</a>
+<li><a href="Existing-Targets.html#Existing-Targets">13.2.3 ROM Monitor Interface</a>
+<li><a href="Existing-Targets.html#Existing-Targets">13.2.4 Custom Protocols</a>
+<li><a href="Existing-Targets.html#Existing-Targets">13.2.5 Transport Layer</a>
+<li><a href="Existing-Targets.html#Existing-Targets">13.2.6 Builtin Simulator</a>
+</li></ul>
+</li></ul>
+<li><a name="toc_Native-Debugging" href="Native-Debugging.html#Native-Debugging">14 Native Debugging</a>
+<ul>
+<li><a href="Native-Debugging.html#Native-Debugging">14.1 ptrace</a>
+<li><a href="Native-Debugging.html#Native-Debugging">14.2 /proc</a>
+<li><a href="Native-Debugging.html#Native-Debugging">14.3 win32</a>
+<li><a href="Native-Debugging.html#Native-Debugging">14.4 shared libraries</a>
+<li><a href="Native-Debugging.html#Native-Debugging">14.5 Native Conditionals</a>
+</li></ul>
+<li><a name="toc_Support-Libraries" href="Support-Libraries.html#Support-Libraries">15 Support Libraries</a>
+<ul>
+<li><a href="Support-Libraries.html#Support-Libraries">15.1 BFD</a>
+<li><a href="Support-Libraries.html#Support-Libraries">15.2 opcodes</a>
+<li><a href="Support-Libraries.html#Support-Libraries">15.3 readline</a>
+<li><a href="Support-Libraries.html#Support-Libraries">15.4 libiberty</a>
+<ul>
+<li><a href="Support-Libraries.html#Support-Libraries">15.4.1 <code>obstacks</code> in <span class="sc">gdb</span></a>
+</li></ul>
+<li><a href="Support-Libraries.html#Support-Libraries">15.5 gnu-regex</a>
+<li><a href="Support-Libraries.html#Support-Libraries">15.6 Array Containers</a>
+<li><a href="Support-Libraries.html#Support-Libraries">15.7 include</a>
+</li></ul>
+<li><a name="toc_Coding-Standards" href="Coding-Standards.html#Coding-Standards">16 Coding Standards</a>
+<ul>
+<li><a href="Coding-Standards.html#Coding-Standards">16.1 <span class="sc">gdb</span> C Coding Standards</a>
+<ul>
+<li><a href="Coding-Standards.html#Coding-Standards">16.1.1 ISO C</a>
+<li><a href="Coding-Standards.html#Coding-Standards">16.1.2 Formatting</a>
+<li><a href="Coding-Standards.html#Coding-Standards">16.1.3 Comments</a>
+<li><a href="Coding-Standards.html#Coding-Standards">16.1.4 C Usage</a>
+<li><a href="Coding-Standards.html#Coding-Standards">16.1.5 Function Prototypes</a>
+<li><a href="Coding-Standards.html#Coding-Standards">16.1.6 File Names</a>
+<li><a href="Coding-Standards.html#Coding-Standards">16.1.7 Include Files</a>
+</li></ul>
+<li><a href="Coding-Standards.html#Coding-Standards">16.2 <span class="sc">gdb</span> Python Coding Standards</a>
+<ul>
+<li><a href="Coding-Standards.html#Coding-Standards">16.2.1 <span class="sc">gdb</span>-specific exceptions</a>
+</li></ul>
+</li></ul>
+<li><a name="toc_Misc-Guidelines" href="Misc-Guidelines.html#Misc-Guidelines">17 Misc Guidelines</a>
+<ul>
+<li><a href="Misc-Guidelines.html#Misc-Guidelines">17.1 Cleanups</a>
+<li><a href="Misc-Guidelines.html#Misc-Guidelines">17.2 Per-architecture module data</a>
+<li><a href="Misc-Guidelines.html#Misc-Guidelines">17.3 Wrapping Output Lines</a>
+<li><a href="Misc-Guidelines.html#Misc-Guidelines">17.4 Memory Management</a>
+<li><a href="Misc-Guidelines.html#Misc-Guidelines">17.5 Compiler Warnings</a>
+<li><a href="Misc-Guidelines.html#Misc-Guidelines">17.6 Internal Error Recovery</a>
+<li><a href="Misc-Guidelines.html#Misc-Guidelines">17.7 Command Names</a>
+<li><a href="Misc-Guidelines.html#Misc-Guidelines">17.8 Clean Design and Portable Implementation</a>
+</li></ul>
+<li><a name="toc_Porting-GDB" href="Porting-GDB.html#Porting-GDB">18 Porting <span class="sc">gdb</span></a>
+<li><a name="toc_Versions-and-Branches" href="Versions-and-Branches.html#Versions-and-Branches">19 Versions and Branches</a>
+<ul>
+<li><a href="Versions-and-Branches.html#Versions-and-Branches">19.1 Versions</a>
+<li><a href="Versions-and-Branches.html#Versions-and-Branches">19.2 Release Branches</a>
+<li><a href="Versions-and-Branches.html#Versions-and-Branches">19.3 Vendor Branches</a>
+<li><a href="Versions-and-Branches.html#Versions-and-Branches">19.4 Experimental Branches</a>
+<ul>
+<li><a href="Versions-and-Branches.html#Versions-and-Branches">19.4.1 Guidelines</a>
+<li><a href="Versions-and-Branches.html#Versions-and-Branches">19.4.2 Tags</a>
+</li></ul>
+</li></ul>
+<li><a name="toc_Start-of-New-Year-Procedure" href="Start-of-New-Year-Procedure.html#Start-of-New-Year-Procedure">20 Start of New Year Procedure</a>
+<li><a name="toc_Releasing-GDB" href="Releasing-GDB.html#Releasing-GDB">21 Releasing <span class="sc">gdb</span></a>
+<ul>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.1 Branch Commit Policy</a>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.2 Obsoleting code</a>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.3 Before the Branch</a>
+<ul>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.3.1 Review the bug data base</a>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.3.2 Check all cross targets build</a>
+</li></ul>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.4 Cut the Branch</a>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.5 Stabilize the branch</a>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.6 Create a Release</a>
+<ul>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.6.1 Create a release candidate</a>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.6.2 Sanity check the tar ball</a>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.6.3 Make a release candidate available</a>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.6.4 Make a formal release available</a>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.6.5 Cleanup</a>
+</li></ul>
+<li><a href="Releasing-GDB.html#Releasing-GDB">21.7 Post release</a>
+</li></ul>
+<li><a name="toc_Testsuite" href="Testsuite.html#Testsuite">22 Testsuite</a>
+<ul>
+<li><a href="Testsuite.html#Testsuite">22.1 Using the Testsuite</a>
+<li><a href="Testsuite.html#Testsuite">22.2 Testsuite Parameters</a>
+<li><a href="Testsuite.html#Testsuite">22.3 Testsuite Configuration</a>
+<li><a href="Testsuite.html#Testsuite">22.4 Testsuite Organization</a>
+<li><a href="Testsuite.html#Testsuite">22.5 Writing Tests</a>
+<li><a href="Testsuite.html#Testsuite">22.6 Board settings</a>
+</li></ul>
+<li><a name="toc_Hints" href="Hints.html#Hints">23 Hints</a>
+<ul>
+<li><a href="Getting-Started.html#Getting-Started">23.1 Getting Started</a>
+<li><a href="Debugging-GDB.html#Debugging-GDB">23.2 Debugging <span class="sc">gdb</span> with itself</a>
+<li><a href="Debugging-GDB.html#Debugging-GDB">23.3 Submitting Patches</a>
+<li><a href="Debugging-GDB.html#Debugging-GDB">23.4 Build Script</a>
+</li></ul>
+<li><a name="toc_GDB-Observers" href="GDB-Observers.html#GDB-Observers">Appendix A <span class="sc">gdb</span> Currently available observers</a>
+<ul>
+<li><a href="GDB-Observers.html#GDB-Observers">A.1 Implementation rationale</a>
+<li><a href="GDB-Observers.html#GDB-Observers">A.2 Debugging</a>
+<li><a href="GDB-Observers.html#GDB-Observers">A.3 <code>normal_stop</code> Notifications</a>
+</li></ul>
+<li><a name="toc_GNU-Free-Documentation-License" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">Appendix B GNU Free Documentation License</a>
+<li><a name="toc_Concept-Index" href="Concept-Index.html#Concept-Index">Concept Index</a>
+<li><a name="toc_Function-and-Variable-Index" href="Function-and-Variable-Index.html#Function-and-Variable-Index">Function and Variable Index</a>
+</li></ul>
+</div>
+
+<div class="node">
+<p>
+<a name="Top"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Summary.html#Summary">Summary</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="../index.html#dir">(dir)</a>
+<hr>
+</div>
+
+<!-- Perhaps this should be the title of the document (but only for info, -->
+<!-- not for TeX).  Existing GNU manuals seem inconsistent on this point. -->
+<h2 class="unnumbered">Scope of this Document</h2>
+
+<p>This document documents the internals of the GNU debugger, <span class="sc">gdb</span>.  It
+includes description of <span class="sc">gdb</span>'s key algorithms and operations, as well
+as the mechanisms that adapt <span class="sc">gdb</span> to specific hosts and targets.
+
+<ul class="menu">
+<li><a accesskey="1" href="Summary.html#Summary">Summary</a>
+<li><a accesskey="2" href="Overall-Structure.html#Overall-Structure">Overall Structure</a>
+<li><a accesskey="3" href="Algorithms.html#Algorithms">Algorithms</a>
+<li><a accesskey="4" href="User-Interface.html#User-Interface">User Interface</a>
+<li><a accesskey="5" href="libgdb.html#libgdb">libgdb</a>
+<li><a accesskey="6" href="Values.html#Values">Values</a>
+<li><a accesskey="7" href="Stack-Frames.html#Stack-Frames">Stack Frames</a>
+<li><a accesskey="8" href="Symbol-Handling.html#Symbol-Handling">Symbol Handling</a>
+<li><a accesskey="9" href="Language-Support.html#Language-Support">Language Support</a>
+<li><a href="Host-Definition.html#Host-Definition">Host Definition</a>
+<li><a href="Target-Architecture-Definition.html#Target-Architecture-Definition">Target Architecture Definition</a>
+<li><a href="Target-Descriptions.html#Target-Descriptions">Target Descriptions</a>
+<li><a href="Target-Vector-Definition.html#Target-Vector-Definition">Target Vector Definition</a>
+<li><a href="Native-Debugging.html#Native-Debugging">Native Debugging</a>
+<li><a href="Support-Libraries.html#Support-Libraries">Support Libraries</a>
+<li><a href="Coding-Standards.html#Coding-Standards">Coding Standards</a>
+<li><a href="Misc-Guidelines.html#Misc-Guidelines">Misc Guidelines</a>
+<li><a href="Porting-GDB.html#Porting-GDB">Porting GDB</a>
+<li><a href="Versions-and-Branches.html#Versions-and-Branches">Versions and Branches</a>
+<li><a href="Start-of-New-Year-Procedure.html#Start-of-New-Year-Procedure">Start of New Year Procedure</a>
+<li><a href="Releasing-GDB.html#Releasing-GDB">Releasing GDB</a>
+<li><a href="Testsuite.html#Testsuite">Testsuite</a>
+<li><a href="Hints.html#Hints">Hints</a>
+
+<li><a href="GDB-Observers.html#GDB-Observers">GDB Observers</a>:   <span class="sc">gdb</span> Currently available observers
+<li><a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>:   The license for this documentation
+<li><a href="Concept-Index.html#Concept-Index">Concept Index</a>
+<li><a href="Function-and-Variable-Index.html#Function-and-Variable-Index">Function and Variable Index</a>
+</ul>
+
+   </body></html>
+

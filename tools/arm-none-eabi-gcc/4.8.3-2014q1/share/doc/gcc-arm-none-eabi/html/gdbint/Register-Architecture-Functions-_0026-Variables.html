@@ -1,0 +1,142 @@
+<html lang="en">
+<head>
+<title>Register Architecture Functions &amp; Variables - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Register-Representation.html#Register-Representation" title="Register Representation">
+<link rel="prev" href="Raw-and-Cooked-Registers.html#Raw-and-Cooked-Registers" title="Raw and Cooked Registers">
+<link rel="next" href="Register-Information-Functions.html#Register-Information-Functions" title="Register Information Functions">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Register-Architecture-Functions-%26-Variables"></a>
+<a name="Register-Architecture-Functions-_0026-Variables"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Register-Information-Functions.html#Register-Information-Functions">Register Information Functions</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Raw-and-Cooked-Registers.html#Raw-and-Cooked-Registers">Raw and Cooked Registers</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Register-Representation.html#Register-Representation">Register Representation</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.6.2 Functions and Variables Specifying the Register Architecture</h4>
+
+<p><a name="index-g_t_0040code_007bgdbarch_007d-register-architecture-functions-263"></a>
+These <code>struct gdbarch</code> functions and variables specify the number
+and type of registers in the architecture.
+
+<div class="defun">
+&mdash; Architecture Function: CORE_ADDR <b>read_pc</b> (<var>struct regcache *regcache</var>)<var><a name="index-read_005fpc-264"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Architecture Function: void <b>write_pc</b> (<var>struct regcache *regcache, CORE_ADDR val</var>)<var><a name="index-write_005fpc-265"></a></var><br>
+<blockquote>
+        <p>Read or write the program counter.  The default value of both
+functions is <code>NULL</code> (no function available).  If the program
+counter is just an ordinary register, it can be specified in
+<code>struct gdbarch</code> instead (see <code>pc_regnum</code> below) and it will
+be read or written using the standard routines to access registers.  This
+function need only be specified if the program counter is not an
+ordinary register.
+
+        <p>Any register information can be obtained using the supplied register
+cache, <var>regcache</var>.  See <a href="Register-Caching.html#Register-Caching">Register Caching</a>.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Function: void <b>pseudo_register_read</b> (<var>struct gdbarch *gdbarch, struct regcache *regcache, int regnum, const gdb_byte *buf</var>)<var><a name="index-pseudo_005fregister_005fread-266"></a></var><br>
+        </div>
+
+<div class="defun">
+&mdash; Architecture Function: void <b>pseudo_register_write</b> (<var>struct gdbarch *gdbarch, struct regcache *regcache, int regnum, const gdb_byte *buf</var>)<var><a name="index-pseudo_005fregister_005fwrite-267"></a></var><br>
+<blockquote>
+        <p>These functions should be defined if there are any pseudo-registers. 
+The default value is <code>NULL</code>.  <var>regnum</var> is the number of the
+register to read or write (which will be a <dfn>cooked</dfn> register
+number) and <var>buf</var> is the buffer where the value read will be
+placed, or from which the value to be written will be taken.  The
+value in the buffer may be converted to or from a signed or unsigned
+integral value using one of the utility functions (see <a href="Register-and-Memory-Data.html#Register-and-Memory-Data">Using Different Register and Memory Data Representations</a>).
+
+        <p>The access should be for the specified architecture,
+<var>gdbarch</var>.  Any register information can be obtained using the
+supplied register cache, <var>regcache</var>.  See <a href="Register-Caching.html#Register-Caching">Register Caching</a>.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Variable: int <b>sp_regnum</b><var><a name="index-sp_005fregnum-268"></a></var><br>
+<blockquote><p><a name="index-sp_005fregnum-269"></a><a name="index-stack-pointer-270"></a><a name="index-g_t_0040kbd_007b_0024sp_007d-271"></a>
+This specifies the register holding the stack pointer, which may be a
+raw or pseudo-register.  It defaults to -1 (not defined), but it is an
+error for it not to be defined.
+
+        <p>The value of the stack pointer register can be accessed withing
+<span class="sc">gdb</span> as the variable <kbd>$sp</kbd>.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Variable: int <b>pc_regnum</b><var><a name="index-pc_005fregnum-272"></a></var><br>
+<blockquote><p><a name="index-pc_005fregnum-273"></a><a name="index-program-counter-274"></a><a name="index-g_t_0040kbd_007b_0024pc_007d-275"></a>
+This specifies the register holding the program counter, which may be a
+raw or pseudo-register.  It defaults to -1 (not defined).  If
+<code>pc_regnum</code> is not defined, then the functions <code>read_pc</code> and
+<code>write_pc</code> (see above) must be defined.
+
+        <p>The value of the program counter (whether defined as a register, or
+through <code>read_pc</code> and <code>write_pc</code>) can be accessed withing
+<span class="sc">gdb</span> as the variable <kbd>$pc</kbd>.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Variable: int <b>ps_regnum</b><var><a name="index-ps_005fregnum-276"></a></var><br>
+<blockquote><p><a name="index-ps_005fregnum-277"></a><a name="index-processor-status-register-278"></a><a name="index-status-register-279"></a><a name="index-g_t_0040kbd_007b_0024ps_007d-280"></a>
+This specifies the register holding the processor status (often called
+the status register), which may be a raw or pseudo-register.  It
+defaults to -1 (not defined).
+
+        <p>If defined, the value of this register can be accessed withing
+<span class="sc">gdb</span> as the variable <kbd>$ps</kbd>.
+
+        </blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Variable: int <b>fp0_regnum</b><var><a name="index-fp0_005fregnum-281"></a></var><br>
+<blockquote><p><a name="index-fp0_005fregnum-282"></a><a name="index-first-floating-point-register-283"></a>
+This specifies the first floating point register.  It defaults to
+0.  <code>fp0_regnum</code> is not needed unless the target offers support
+for floating point.
+
+        </blockquote></div>
+
+   </body></html>
+

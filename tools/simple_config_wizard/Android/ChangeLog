@@ -1,20 +1,30 @@
                         ChangeLog
 ----------------------------------------------------------------
-2016/06/13
-	- Refined PacketSendTimeIntervalMs
+2016/05/23
+	-Refined simple config flow with PIN code
 
-2016/02/16
-	- Refined wifi connection for Android 6
+2016/05/03
+	-Refined simple config flow
 
-2015/12/29
-	- Fixed ssid is empty when ap is hidden SSID 
+2016/02/22
+	- Support multiple device
+	- Scan flow refined after configuration
 
-2015/11/18
-	- Refined simple config Lib about other charset issue
+2016/01/21
+	- Connection issue fixed when AP is hidden SSID 
+	
+2016/01/10
+	- Fixed ssid is empty when AP is hidden SSID 
 
-2015/11/09
-	- refined connection and refined sending packet method
-
+2015/11/11
+	- Refined wifi connection
+	
+2015/09/25
+	- Refined SimpleConfig ap list and wifi connection 
+	
+2015/08/15
+	- Refined simple config
+	
 2015/07/23
 	- device type : 0xff00~0xffff for customer
 

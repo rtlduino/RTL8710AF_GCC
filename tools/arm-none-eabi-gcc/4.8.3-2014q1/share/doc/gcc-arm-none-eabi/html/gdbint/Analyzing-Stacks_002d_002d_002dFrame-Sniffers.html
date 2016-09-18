@@ -1,0 +1,169 @@
+<html lang="en">
+<head>
+<title>Analyzing Stacks---Frame Sniffers - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Frame-Interpretation.html#Frame-Interpretation" title="Frame Interpretation">
+<link rel="prev" href="Functions-to-Access-Frame-Data.html#Functions-to-Access-Frame-Data" title="Functions to Access Frame Data">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Analyzing-Stacks---Frame-Sniffers"></a>
+<a name="Analyzing-Stacks_002d_002d_002dFrame-Sniffers"></a>
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Functions-to-Access-Frame-Data.html#Functions-to-Access-Frame-Data">Functions to Access Frame Data</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Frame-Interpretation.html#Frame-Interpretation">Frame Interpretation</a>
+<hr>
+</div>
+
+<h4 class="subsection">11.7.6 Analyzing Stacks&mdash;Frame Sniffers</h4>
+
+<p>When a program stops, <span class="sc">gdb</span> needs to construct the chain of
+struct <code>frame_info</code> representing the state of the stack using
+appropriate <dfn>sniffers</dfn>.
+
+   <p>Each architecture requires appropriate sniffers, but they do not form
+entries in <code>struct&nbsp;gdbarch<!-- /@w --></code>, since more than one sniffer may
+be required and a sniffer may be suitable for more than one
+<code>struct&nbsp;gdbarch<!-- /@w --></code>.  Instead sniffers are associated with
+architectures using the following functions.
+
+     <ul>
+<li><a name="index-frame_005funwind_005fappend_005fsniffer-348"></a><code>frame_unwind_append_sniffer</code> is used to add a new sniffer to
+analyze THIS frame when given a pointer to the NEXT frame.
+
+     <li><a name="index-frame_005fbase_005fappend_005fsniffer-349"></a><code>frame_base_append_sniffer</code> is used to add a new sniffer
+which can determine information about the base of a stack frame.
+
+     <li><a name="index-frame_005fbase_005fset_005fdefault-350"></a><code>frame_base_set_default</code> is used to specify the default base
+sniffer.
+
+   </ul>
+
+   <p>These functions all take a reference to <code>struct&nbsp;gdbarch<!-- /@w --></code>, so
+they are associated with a specific architecture.  They are usually
+called in the <code>gdbarch</code> initialization function, after the
+<code>gdbarch</code> struct has been set up.  Unless a default has been set, the
+most recently appended sniffer will be tried first.
+
+   <p>The main frame unwinding sniffer (as set by
+<code>frame_unwind_append_sniffer)</code> returns a structure specifying
+a set of sniffing functions:
+
+   <p><a name="index-g_t_0040code_007bframe_005funwind_007d-351"></a>
+<pre class="smallexample">     struct frame_unwind
+     {
+        enum frame_type            type;
+        frame_this_id_ftype       *this_id;
+        frame_prev_register_ftype *prev_register;
+        const struct frame_data   *unwind_data;
+        frame_sniffer_ftype       *sniffer;
+        frame_prev_pc_ftype       *prev_pc;
+        frame_dealloc_cache_ftype *dealloc_cache;
+     };
+</pre>
+   <p>The <code>type</code> field indicates the type of frame this sniffer can
+handle: normal, dummy (see <a href="Functions-Creating-Dummy-Frames.html#Functions-Creating-Dummy-Frames">Functions Creating Dummy Frames</a>), signal handler or sentinel.  Signal
+handlers sometimes have their own simplified stack structure for
+efficiency, so may need their own handlers.
+
+   <p>The <code>unwind_data</code> field holds additional information which may be
+relevant to particular types of frame.  For example it may hold
+additional information for signal handler frames.
+
+   <p>The remaining fields define functions that yield different types of
+information when given a pointer to the NEXT stack frame.  Not all
+functions need be provided.  If an entry is <code>NULL</code>, the next sniffer will
+be tried instead.
+
+     <ul>
+<li><code>this_id</code> determines the stack pointer and function (code
+entry point) for THIS stack frame.
+
+     <li><code>prev_register</code> determines where the values of registers for
+the PREVIOUS stack frame are stored in THIS stack frame.
+
+     <li><code>sniffer</code> takes a look at THIS frame's registers to
+determine if this is the appropriate unwinder.
+
+     <li><code>prev_pc</code> determines the program counter for THIS
+frame.  Only needed if the program counter is not an ordinary register
+(see <a href="Register-Architecture-Functions-_0026-Variables.html#Register-Architecture-Functions-_0026-Variables">Functions and Variables Specifying the Register Architecture</a>).
+
+     <li><code>dealloc_cache</code> frees any additional memory associated with
+the prologue cache for this frame (see <a href="Prologue-Caches.html#Prologue-Caches">Prologue Caches</a>).
+
+   </ul>
+
+   <p>In general it is only the <code>this_id</code> and <code>prev_register</code>
+fields that need be defined for custom sniffers.
+
+   <p>The frame base sniffer is much simpler.  It is a <code>struct&nbsp;frame_base<!-- /@w --></code>, which refers to the corresponding <code>frame_unwind</code>
+struct and whose fields refer to functions yielding various addresses
+within the frame.
+
+   <p><a name="index-g_t_0040code_007bframe_005fbase_007d-352"></a>
+<pre class="smallexample">     struct frame_base
+     {
+        const struct frame_unwind *unwind;
+        frame_this_base_ftype     *this_base;
+        frame_this_locals_ftype   *this_locals;
+        frame_this_args_ftype     *this_args;
+     };
+</pre>
+   <p>All the functions referred to take a pointer to the NEXT frame as
+argument. The function referred to by <code>this_base</code> returns the
+base address of THIS frame, the function referred to by
+<code>this_locals</code> returns the base address of local variables in THIS
+frame and the function referred to by <code>this_args</code> returns the
+base address of the function arguments in this frame.
+
+   <p>As described above, the base address of a frame is the address
+immediately before the start of the NEXT frame.  For a falling
+stack, this is the lowest address in the frame and for a rising stack
+it is the highest address in the frame.  For most architectures the
+same address is also the base address for local variables and
+arguments, in which case the same function can be used for all three
+entries<a rel="footnote" href="#fn-1" name="fnd-1"><sup>1</sup></a>.
+
+   <div class="footnote">
+<hr>
+<h4>Footnotes</h4><p class="footnote"><small>[<a name="fn-1" href="#fnd-1">1</a>]</small> It is worth noting that if it cannot be determined in any
+other way (for example by there being a register with the name
+<code>"fp"</code>), then the result of the <code>this_base</code> function will be
+used as the value of the frame pointer variable <kbd>$fp</kbd> in
+<span class="sc">gdb</span>.  This is very often not correct (for example with the
+OpenRISC 1000, this value is the stack pointer, <kbd>$sp</kbd>).  In this
+case a register (raw or pseudo) with the name <code>"fp"</code> should be
+defined.  It will be used in preference as the value of <kbd>$fp</kbd>.</p>
+
+   <hr></div>
+
+   </body></html>
+

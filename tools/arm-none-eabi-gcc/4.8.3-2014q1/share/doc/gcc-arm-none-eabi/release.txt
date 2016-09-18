@@ -1,0 +1,104 @@
+Release notes for
+*************************************************
+GNU Tools for ARM Embedded Processors 4.8
+                               - Q1 2014
+*************************************************
+
+This release includes the following items:
+* Bare metal EABI pre-built binaries for running on a Windows host
+* Bare metal EABI pre-built binaries for running on a Linux host
+* Bare metal EABI pre-built binaries for running on a Mac OS X host
+* Source code package (together with build scripts and instructions to setup
+  build environment), composed of:
+  * gcc : ARM/embedded-4_8-branch revision 208322
+    http://gcc.gnu.org/svn/gcc/branches/ARM/embedded-4_8-branch/
+
+  * binutils : 2.23 with mainline backports
+    git://sourceware.org/git/binutils.git commit 8ea85793ab9a147f826a2d30ff612d6e77d02225
+
+  * newlib : 2.1.0 with mainline backports
+    git://sourceware.org/git/newlib.git commit e14046f93c76ef701d8ad133d0ea2b96d3c1b578 
+
+  * gdb : 7.6 without target sim support
+    git://sourceware.org/git/gdb.git commit 7fc7df8816e69c7478d09c6f3447b83f28532711
+
+  * cloog 0.18.0 : 
+    ftp://gcc.gnu.org/pub/gcc/infrastructure/cloog-0.18.0.tar.gz
+
+  * expat 2.0.1 :
+    http://jaist.dl.sourceforge.net/project/expat/expat/2.0.1/expat-2.0.1.tar.gz
+
+  * gmp 4.3.2 : ftp://gcc.gnu.org/pub/gcc/infrastructure/gmp-4.3.2.tar.bz2
+
+  * libelf 0.8.13 : http://www.mr511.de/software/libelf-0.8.13.tar.gz
+
+  * libiconv 1.14 :
+    http://ftp.gnu.org/gnu/libiconv/libiconv-1.14.tar.gz
+
+  * mpc 0.8.1 : ftp://gcc.gnu.org/pub/gcc/infrastructure/mpc-0.8.1.tar.gz
+
+  * mpfr 2.4.2 : ftp://gcc.gnu.org/pub/gcc/infrastructure/mpfr-2.4.2.tar.bz2
+
+  * isl 0.11.1 : ftp://gcc.gnu.org/pub/gcc/infrastructure/isl-0.11.1.tar.bz2
+
+  * zlib 1.2.5 and a makefile patch :
+    http://sourceforge.net/projects/libpng/files/zlib/1.2.5/zlib-1.2.5.tar.bz2/download
+
+  * newlib-nano 2.1 : Included in source package
+
+  * gcc-plugins (with some tweaks):
+    http://gcc.gnu.org/ml/gcc-patches/2013-05/msg00667.html
+
+Supported hosts:
+* Windows 7 32/64 bits (with installer and alternative zip package)
+* Linux 32/64 bits
+  - Ubuntu 8.x or later (tarball)
+  - Ubuntu 10.04/12.04/13.04/13.10 (tarball and PPA)
+  - RHEL 4/5 (tarball)
+* Mac OS X 10.7.3 and newer 64 bits (tarball)
+
+Supported target OS:
+* Bare metal EABI only
+
+Features:
+* All GCC 4.8 features, plus latest mainline features
+  - Cortex-R7 support
+* Additional code size optimizations
+  - Don't expand multiply instruction for Thumb-1.
+  - Avoid unnecessary lr save instruction for Thumb-1.
+* Newlib-nano: newlib branch optimized for code size
+* Cortex-A profile multilib
+* Link Time Optimization (LTO)
+* A new compiler option -mslow-flash-data to minimize the literal load to
+  boost performance for some armv7-m targets.
+* A new compiler option -mpic-data-is-text-relative to enable/disable
+  addressing data with PC relative.
+* Avoid missing _sbrk issue when .specs is used.
+* Support multiple RAM sessions in startup code.
+* A GCC plugin to optimize Finite State Machine program.
+
+Tests:
+* Tested on a variety of Cortex-M0/M0+/M3/M4/A9 boards
+* Tested on Qemu
+
+Important bugs fixed in 4.8 2014q1 update release:
+* Incorrect write to packed field when strict-volatile-bitfields enabled
+  http://gcc.gnu.org/bugzilla/show_bug.cgi?id=56997
+  https://bugs.launchpad.net/gcc-arm-embedded/+bug/1197604
+* ICE reload1.c:1058 using 4.8 with mthumb fomit-frame-pointer
+  https://bugs.launchpad.net/gcc-arm-embedded/+bug/1278004
+* Fix ARM NAN fraction bits
+  https://sourceware.org/ml/libc-alpha/2014-02/msg00740.html
+* Unable to redefine weak function in -flto incrementally-linked executable
+  https://sourceware.org/bugzilla/show_bug.cgi?id=15323
+* ICE on Windows with due to mingw version too old
+  https://bugs.launchpad.net/gcc-arm-embedded/+bug/1267504
+
+Known Changes and Issues:
+* Unlike the previous releases, this release O2 optimization level doesn't
+  unroll loop.  To tune the strategy to get better performance for your
+  case, please refer to unrolling related parameters in associated gcc manual.
+* The gcc regression test case pr42575.c now fails due to suboptimal code
+  on 64-bit integer multiply caused by gcc new rtx cost model.
+* Ubuntu 13.10 PPA release doesn't have documentation due to incompatibility
+  to latest texinfo.

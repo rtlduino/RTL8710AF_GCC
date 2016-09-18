@@ -1,14 +1,22 @@
                         ChangeLog
 ----------------------------------------------------------------
-2016/03/08
-	- Using CocoaAsyncSocket framework to instead of AsyncUdpSocket
-	- Adjust AsyncSocket releated code
-	
-2015/10/23
-	- Support iOS 9.
+2016/05/03
+	- Refined simple config flow
 
-2015/08/24
-	- Re-fine simple config
+2016/04/08
+	- refined result after simple config when device is no name
+
+2016/02/22
+	- Support multiple device
+
+2015/09/25
+	- Bug fixed when packet send fail
+	
+2015/08/15
+	- Refined simple config
+	
+2015/08/06
+	- Adjust sending packet speed
 	
 2015/05/26
 	- Support iOS 8.

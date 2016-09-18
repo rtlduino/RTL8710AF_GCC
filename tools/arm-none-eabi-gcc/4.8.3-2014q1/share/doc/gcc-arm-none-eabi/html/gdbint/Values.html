@@ -1,0 +1,130 @@
+<html lang="en">
+<head>
+<title>Values - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="libgdb.html#libgdb" title="libgdb">
+<link rel="next" href="Stack-Frames.html#Stack-Frames" title="Stack Frames">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Values"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Stack-Frames.html#Stack-Frames">Stack Frames</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="libgdb.html#libgdb">libgdb</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">6 Values</h2>
+
+<h3 class="section">6.1 Values</h3>
+
+<p><a name="index-values-102"></a><a name="index-g_t_0040code_007bvalue_007d-structure-103"></a><span class="sc">gdb</span> uses <code>struct value</code>, or <dfn>values</dfn>, as an internal
+abstraction for the representation of a variety of inferior objects
+and <span class="sc">gdb</span> convenience objects.
+
+   <p>Values have an associated <code>struct type</code>, that describes a virtual
+view of the raw data or object stored in or accessed through the
+value.
+
+   <p>A value is in addition discriminated by its lvalue-ness, given its
+<code>enum lval_type</code> enumeration type:
+
+   <p><a name="index-g_t_0040code_007blval_005ftype_007d-enumeration_002c-for-values_002e-104"></a>
+     <dl>
+<dt><code>not_lval</code><dd>This value is not an lval.  It can't be assigned to.
+
+     <br><dt><code>lval_memory</code><dd>This value represents an object in memory.
+
+     <br><dt><code>lval_register</code><dd>This value represents an object that lives in a register.
+
+     <br><dt><code>lval_internalvar</code><dd>Represents the value of an internal variable.
+
+     <br><dt><code>lval_internalvar_component</code><dd>Represents part of a <span class="sc">gdb</span> internal variable.  E.g., a
+structure field.
+
+     <p><a name="index-computed-values-105"></a><br><dt><code>lval_computed</code><dd>These are &ldquo;computed&rdquo; values.  They allow creating specialized value
+objects for specific purposes, all abstracted away from the core value
+support code.  The creator of such a value writes specialized
+functions to handle the reading and writing to/from the value's
+backend data, and optionally, a &ldquo;copy operator&rdquo; and a
+&ldquo;destructor&rdquo;.
+
+     <p>Pointers to these functions are stored in a <code>struct lval_funcs</code>
+instance (declared in <samp><span class="file">value.h</span></samp>), and passed to the
+<code>allocate_computed_value</code> function, as in the example below.
+
+     <pre class="smallexample">          static void
+          nil_value_read (struct value *v)
+          {
+            /* This callback reads data from some backend, and stores it in V.
+               In this case, we always read null data.  You'll want to fill in
+               something more interesting.  */
+          
+            memset (value_contents_all_raw (v),
+                    value_offset (v),
+                    TYPE_LENGTH (value_type (v)));
+          }
+          
+          static void
+          nil_value_write (struct value *v, struct value *fromval)
+          {
+            /* Takes the data from FROMVAL and stores it in the backend of V.  */
+          
+            to_oblivion (value_contents_all_raw (fromval),
+                         value_offset (v),
+                         TYPE_LENGTH (value_type (fromval)));
+          }
+          
+          static struct lval_funcs nil_value_funcs =
+            {
+              nil_value_read,
+              nil_value_write
+            };
+          
+          struct value *
+          make_nil_value (void)
+          {
+             struct type *type;
+             struct value *v;
+          
+             type = make_nils_type ();
+             v = allocate_computed_value (type, &amp;nil_value_funcs, NULL);
+          
+             return v;
+          }
+</pre>
+     <p>See the implementation of the <code>$_siginfo</code> convenience variable in
+<samp><span class="file">infrun.c</span></samp> as a real example use of lval_computed.
+
+   </dl>
+
+   </body></html>
+

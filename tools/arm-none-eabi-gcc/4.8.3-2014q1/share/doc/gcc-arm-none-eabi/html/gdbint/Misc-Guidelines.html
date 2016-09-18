@@ -1,0 +1,482 @@
+<html lang="en">
+<head>
+<title>Misc Guidelines - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Coding-Standards.html#Coding-Standards" title="Coding Standards">
+<link rel="next" href="Porting-GDB.html#Porting-GDB" title="Porting GDB">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Misc-Guidelines"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Porting-GDB.html#Porting-GDB">Porting GDB</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Coding-Standards.html#Coding-Standards">Coding Standards</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">17 Misc Guidelines</h2>
+
+<p>This chapter covers topics that are lower-level than the major
+algorithms of <span class="sc">gdb</span>.
+
+<h3 class="section">17.1 Cleanups</h3>
+
+<p><a name="index-cleanups-461"></a>
+Cleanups are a structured way to deal with things that need to be done
+later.
+
+   <p>When your code does something (e.g., <code>xmalloc</code> some memory, or
+<code>open</code> a file) that needs to be undone later (e.g., <code>xfree</code>
+the memory or <code>close</code> the file), it can make a cleanup.  The
+cleanup will be done at some future point: when the command is finished
+and control returns to the top level; when an error occurs and the stack
+is unwound; or when your code decides it's time to explicitly perform
+cleanups.  Alternatively you can elect to discard the cleanups you
+created.
+
+   <p>Syntax:
+
+     <dl>
+<dt><code>struct cleanup *</code><var>old_chain</var><code>;</code><dd>Declare a variable which will hold a cleanup chain handle.
+
+     <p><a name="index-make_005fcleanup-462"></a><br><dt><var>old_chain</var><code> = make_cleanup (</code><var>function</var><code>, </code><var>arg</var><code>);</code><dd>Make a cleanup which will cause <var>function</var> to be called with
+<var>arg</var> (a <code>char *</code>) later.  The result, <var>old_chain</var>, is a
+handle that can later be passed to <code>do_cleanups</code> or
+<code>discard_cleanups</code>.  Unless you are going to call
+<code>do_cleanups</code> or <code>discard_cleanups</code>, you can ignore the result
+from <code>make_cleanup</code>.
+
+     <p><a name="index-do_005fcleanups-463"></a><br><dt><code>do_cleanups (</code><var>old_chain</var><code>);</code><dd>Do all cleanups added to the chain since the corresponding
+<code>make_cleanup</code> call was made.
+
+     <p><a name="index-discard_005fcleanups-464"></a><br><dt><code>discard_cleanups (</code><var>old_chain</var><code>);</code><dd>Same as <code>do_cleanups</code> except that it just removes the cleanups from
+the chain and does not call the specified functions. 
+</dl>
+
+   <p>Cleanups are implemented as a chain.  The handle returned by
+<code>make_cleanups</code> includes the cleanup passed to the call and any
+later cleanups appended to the chain (but not yet discarded or
+performed).  E.g.:
+
+<pre class="smallexample">     make_cleanup (a, 0);
+     {
+       struct cleanup *old = make_cleanup (b, 0);
+       make_cleanup (c, 0)
+       ...
+       do_cleanups (old);
+     }
+</pre>
+   <p class="noindent">will call <code>c()</code> and <code>b()</code> but will not call <code>a()</code>.  The
+cleanup that calls <code>a()</code> will remain in the cleanup chain, and will
+be done later unless otherwise discarded.
+
+   <p>Your function should explicitly do or discard the cleanups it creates. 
+Failing to do this leads to non-deterministic behavior since the caller
+will arbitrarily do or discard your functions cleanups.  This need leads
+to two common cleanup styles.
+
+   <p>The first style is try/finally.  Before it exits, your code-block calls
+<code>do_cleanups</code> with the old cleanup chain and thus ensures that your
+code-block's cleanups are always performed.  For instance, the following
+code-segment avoids a memory leak problem (even when <code>error</code> is
+called and a forced stack unwind occurs) by ensuring that the
+<code>xfree</code> will always be called:
+
+<pre class="smallexample">     struct cleanup *old = make_cleanup (null_cleanup, 0);
+     data = xmalloc (sizeof blah);
+     make_cleanup (xfree, data);
+     ... blah blah ...
+     do_cleanups (old);
+</pre>
+   <p>The second style is try/except.  Before it exits, your code-block calls
+<code>discard_cleanups</code> with the old cleanup chain and thus ensures that
+any created cleanups are not performed.  For instance, the following
+code segment, ensures that the file will be closed but only if there is
+an error:
+
+<pre class="smallexample">     FILE *file = fopen ("afile", "r");
+     struct cleanup *old = make_cleanup (close_file, file);
+     ... blah blah ...
+     discard_cleanups (old);
+     return file;
+</pre>
+   <p>Some functions, e.g., <code>fputs_filtered()</code> or <code>error()</code>, specify
+that they &ldquo;should not be called when cleanups are not in place&rdquo;.  This
+means that any actions you need to reverse in the case of an error or
+interruption must be on the cleanup chain before you call these
+functions, since they might never return to your code (they
+&lsquo;<samp><span class="samp">longjmp</span></samp>&rsquo; instead).
+
+<h3 class="section">17.2 Per-architecture module data</h3>
+
+<p><a name="index-per_002darchitecture-module-data-465"></a><a name="index-multi_002darch-data-466"></a><a name="index-data_002dpointer_002c-per_002darchitecture_002fper_002dmodule-467"></a>
+The multi-arch framework includes a mechanism for adding module
+specific per-architecture data-pointers to the <code>struct gdbarch</code>
+architecture object.
+
+   <p>A module registers one or more per-architecture data-pointers using:
+
+<div class="defun">
+&mdash; Architecture Function: struct gdbarch_data * <b>gdbarch_data_register_pre_init</b> (<var>gdbarch_data_pre_init_ftype *pre_init</var>)<var><a name="index-gdbarch_005fdata_005fregister_005fpre_005finit-468"></a></var><br>
+<blockquote><p><var>pre_init</var> is used to, on-demand, allocate an initial value for a
+per-architecture data-pointer using the architecture's obstack (passed
+in as a parameter).  Since <var>pre_init</var> can be called during
+architecture creation, it is not parameterized with the architecture. 
+and must not call modules that use per-architecture data. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Architecture Function: struct gdbarch_data * <b>gdbarch_data_register_post_init</b> (<var>gdbarch_data_post_init_ftype *post_init</var>)<var><a name="index-gdbarch_005fdata_005fregister_005fpost_005finit-469"></a></var><br>
+<blockquote><p><var>post_init</var> is used to obtain an initial value for a
+per-architecture data-pointer <em>after</em>.  Since <var>post_init</var> is
+always called after architecture creation, it both receives the fully
+initialized architecture and is free to call modules that use
+per-architecture data (care needs to be taken to ensure that those
+other modules do not try to call back to this module as that will
+create in cycles in the initialization call graph). 
+</p></blockquote></div>
+
+   <p>These functions return a <code>struct gdbarch_data</code> that is used to
+identify the per-architecture data-pointer added for that module.
+
+   <p>The per-architecture data-pointer is accessed using the function:
+
+<div class="defun">
+&mdash; Architecture Function: void * <b>gdbarch_data</b> (<var>struct gdbarch *gdbarch, struct gdbarch_data *data_handle</var>)<var><a name="index-gdbarch_005fdata-470"></a></var><br>
+<blockquote><p>Given the architecture <var>arch</var> and module data handle
+<var>data_handle</var> (returned by <code>gdbarch_data_register_pre_init</code>
+or <code>gdbarch_data_register_post_init</code>), this function returns the
+current value of the per-architecture data-pointer.  If the data
+pointer is <code>NULL</code>, it is first initialized by calling the
+corresponding <var>pre_init</var> or <var>post_init</var> method. 
+</p></blockquote></div>
+
+   <p>The examples below assume the following definitions:
+
+<pre class="smallexample">     struct nozel { int total; };
+     static struct gdbarch_data *nozel_handle;
+</pre>
+   <p>A module can extend the architecture vector, adding additional
+per-architecture data, using the <var>pre_init</var> method.  The module's
+per-architecture data is then initialized during architecture
+creation.
+
+   <p>In the below, the module's per-architecture <em>nozel</em> is added.  An
+architecture can specify its nozel by calling <code>set_gdbarch_nozel</code>
+from <code>gdbarch_init</code>.
+
+<pre class="smallexample">     static void *
+     nozel_pre_init (struct obstack *obstack)
+     {
+       struct nozel *data = OBSTACK_ZALLOC (obstack, struct nozel);
+       return data;
+     }
+</pre>
+   <pre class="smallexample">     extern void
+     set_gdbarch_nozel (struct gdbarch *gdbarch, int total)
+     {
+       struct nozel *data = gdbarch_data (gdbarch, nozel_handle);
+       data-&gt;total = nozel;
+     }
+</pre>
+   <p>A module can on-demand create architecture dependent data structures
+using <code>post_init</code>.
+
+   <p>In the below, the nozel's total is computed on-demand by
+<code>nozel_post_init</code> using information obtained from the
+architecture.
+
+<pre class="smallexample">     static void *
+     nozel_post_init (struct gdbarch *gdbarch)
+     {
+       struct nozel *data = GDBARCH_OBSTACK_ZALLOC (gdbarch, struct nozel);
+       nozel-&gt;total = gdbarch... (gdbarch);
+       return data;
+     }
+</pre>
+   <pre class="smallexample">     extern int
+     nozel_total (struct gdbarch *gdbarch)
+     {
+       struct nozel *data = gdbarch_data (gdbarch, nozel_handle);
+       return data-&gt;total;
+     }
+</pre>
+   <h3 class="section">17.3 Wrapping Output Lines</h3>
+
+<p><a name="index-line-wrap-in-output-471"></a>
+<a name="index-wrap_005fhere-472"></a>Output that goes through <code>printf_filtered</code> or <code>fputs_filtered</code>
+or <code>fputs_demangled</code> needs only to have calls to <code>wrap_here</code>
+added in places that would be good breaking points.  The utility
+routines will take care of actually wrapping if the line width is
+exceeded.
+
+   <p>The argument to <code>wrap_here</code> is an indentation string which is
+printed <em>only</em> if the line breaks there.  This argument is saved
+away and used later.  It must remain valid until the next call to
+<code>wrap_here</code> or until a newline has been printed through the
+<code>*_filtered</code> functions.  Don't pass in a local variable and then
+return!
+
+   <p>It is usually best to call <code>wrap_here</code> after printing a comma or
+space.  If you call it before printing a space, make sure that your
+indentation properly accounts for the leading space that will print if
+the line wraps there.
+
+   <p>Any function or set of functions that produce filtered output must
+finish by printing a newline, to flush the wrap buffer, before switching
+to unfiltered (<code>printf</code>) output.  Symbol reading routines that
+print warnings are a good example.
+
+<h3 class="section">17.4 Memory Management</h3>
+
+<p><span class="sc">gdb</span> does not use the functions <code>malloc</code>, <code>realloc</code>,
+<code>calloc</code>, <code>free</code> and <code>asprintf</code>.
+
+   <p><span class="sc">gdb</span> uses the functions <code>xmalloc</code>, <code>xrealloc</code> and
+<code>xcalloc</code> when allocating memory.  Unlike <code>malloc</code> et.al. 
+these functions do not return when the memory pool is empty.  Instead,
+they unwind the stack using cleanups.  These functions return
+<code>NULL</code> when requested to allocate a chunk of memory of size zero.
+
+   <p><em>Pragmatics: By using these functions, the need to check every
+memory allocation is removed.  These functions provide portable
+behavior.</em>
+
+   <p><span class="sc">gdb</span> does not use the function <code>free</code>.
+
+   <p><span class="sc">gdb</span> uses the function <code>xfree</code> to return memory to the
+memory pool.  Consistent with ISO-C, this function ignores a request to
+free a <code>NULL</code> pointer.
+
+   <p><em>Pragmatics: On some systems </em><code>free</code><em> fails when passed a
+</em><code>NULL</code><em> pointer.</em>
+
+   <p><span class="sc">gdb</span> can use the non-portable function <code>alloca</code> for the
+allocation of small temporary values (such as strings).
+
+   <p><em>Pragmatics: This function is very non-portable.  Some systems
+restrict the memory being allocated to no more than a few kilobytes.</em>
+
+   <p><span class="sc">gdb</span> uses the string function <code>xstrdup</code> and the print
+function <code>xstrprintf</code>.
+
+   <p><em>Pragmatics: </em><code>asprintf</code><em> and </em><code>strdup</code><em> can fail.  Print
+functions such as </em><code>sprintf</code><em> are very prone to buffer overflow
+errors.</em>
+
+<h3 class="section">17.5 Compiler Warnings</h3>
+
+<p><a name="index-compiler-warnings-473"></a>
+With few exceptions, developers should avoid the configuration option
+&lsquo;<samp><span class="samp">--disable-werror</span></samp>&rsquo; when building <span class="sc">gdb</span>.  The exceptions
+are listed in the file <samp><span class="file">gdb/MAINTAINERS</span></samp>.  The default, when
+building with <span class="sc">gcc</span>, is &lsquo;<samp><span class="samp">--enable-werror</span></samp>&rsquo;.
+
+   <p>This option causes <span class="sc">gdb</span> (when built using GCC) to be compiled
+with a carefully selected list of compiler warning flags.  Any warnings
+from those flags are treated as errors.
+
+   <p>The current list of warning flags includes:
+
+     <dl>
+<dt>&lsquo;<samp><span class="samp">-Wall</span></samp>&rsquo;<dd>Recommended <span class="sc">gcc</span> warnings.
+
+     <br><dt>&lsquo;<samp><span class="samp">-Wdeclaration-after-statement</span></samp>&rsquo;<dd>
+<span class="sc">gcc</span> 3.x (and later) and <span class="sc">c99</span> allow declarations mixed with
+code, but <span class="sc">gcc</span> 2.x and <span class="sc">c89</span> do not.
+
+     <br><dt>&lsquo;<samp><span class="samp">-Wpointer-arith</span></samp>&rsquo;
+<br><dt>&lsquo;<samp><span class="samp">-Wformat-nonliteral</span></samp>&rsquo;<dd>Non-literal format strings, with a few exceptions, are bugs - they
+might contain unintended user-supplied format specifiers. 
+Since <span class="sc">gdb</span> uses the <code>format printf</code> attribute on all
+<code>printf</code> like functions this checks not just <code>printf</code> calls
+but also calls to functions such as <code>fprintf_unfiltered</code>.
+
+     <br><dt>&lsquo;<samp><span class="samp">-Wno-pointer-sign</span></samp>&rsquo;<dd>In version 4.0, GCC began warning about pointer argument passing or
+assignment even when the source and destination differed only in
+signedness.  However, most <span class="sc">gdb</span> code doesn't distinguish
+carefully between <code>char</code> and <code>unsigned char</code>.  In early 2006
+the <span class="sc">gdb</span> developers decided correcting these warnings wasn't
+worth the time it would take.
+
+     <br><dt>&lsquo;<samp><span class="samp">-Wno-unused-parameter</span></samp>&rsquo;<dd>Due to the way that <span class="sc">gdb</span> is implemented many functions have
+unused parameters.  Consequently this warning is avoided.  The macro
+<code>ATTRIBUTE_UNUSED</code> is not used as it leads to false negatives &mdash;
+it is not an error to have <code>ATTRIBUTE_UNUSED</code> on a parameter that
+is being used.
+
+     <br><dt>&lsquo;<samp><span class="samp">-Wno-unused</span></samp>&rsquo;<dt>&lsquo;<samp><span class="samp">-Wno-switch</span></samp>&rsquo;<dt>&lsquo;<samp><span class="samp">-Wno-char-subscripts</span></samp>&rsquo;<dd>These are warnings which might be useful for <span class="sc">gdb</span>, but are
+currently too noisy to enable with &lsquo;<samp><span class="samp">-Werror</span></samp>&rsquo;.
+
+   </dl>
+
+<h3 class="section">17.6 Internal Error Recovery</h3>
+
+<p>During its execution, <span class="sc">gdb</span> can encounter two types of errors. 
+User errors and internal errors.  User errors include not only a user
+entering an incorrect command but also problems arising from corrupt
+object files and system errors when interacting with the target. 
+Internal errors include situations where <span class="sc">gdb</span> has detected, at
+run time, a corrupt or erroneous situation.
+
+   <p>When reporting an internal error, <span class="sc">gdb</span> uses
+<code>internal_error</code> and <code>gdb_assert</code>.
+
+   <p><span class="sc">gdb</span> must not call <code>abort</code> or <code>assert</code>.
+
+   <p><em>Pragmatics: There is no </em><code>internal_warning</code><em> function.  Either
+the code detected a user error, recovered from it and issued a
+</em><code>warning</code><em> or the code failed to correctly recover from the user
+error and issued an </em><code>internal_error</code><em>.</em>
+
+<h3 class="section">17.7 Command Names</h3>
+
+<p>GDB U/I commands are written &lsquo;<samp><span class="samp">foo-bar</span></samp>&rsquo;, not &lsquo;<samp><span class="samp">foo_bar</span></samp>&rsquo;.
+
+<h3 class="section">17.8 Clean Design and Portable Implementation</h3>
+
+<p><a name="index-design-474"></a>In addition to getting the syntax right, there's the little question of
+semantics.  Some things are done in certain ways in <span class="sc">gdb</span> because long
+experience has shown that the more obvious ways caused various kinds of
+trouble.
+
+   <p><a name="index-assumptions-about-targets-475"></a>You can't assume the byte order of anything that comes from a target
+(including <var>value</var>s, object files, and instructions).  Such things
+must be byte-swapped using <code>SWAP_TARGET_AND_HOST</code> in
+<span class="sc">gdb</span>, or one of the swap routines defined in <samp><span class="file">bfd.h</span></samp>,
+such as <code>bfd_get_32</code>.
+
+   <p>You can't assume that you know what interface is being used to talk to
+the target system.  All references to the target must go through the
+current <code>target_ops</code> vector.
+
+   <p>You can't assume that the host and target machines are the same machine
+(except in the &ldquo;native&rdquo; support modules).  In particular, you can't
+assume that the target machine's header files will be available on the
+host machine.  Target code must bring along its own header files &ndash;
+written from scratch or explicitly donated by their owner, to avoid
+copyright problems.
+
+   <p><a name="index-portability-476"></a>Insertion of new <code>#ifdef</code>'s will be frowned upon.  It's much better
+to write the code portably than to conditionalize it for various
+systems.
+
+   <p><a name="index-system-dependencies-477"></a>New <code>#ifdef</code>'s which test for specific compilers or manufacturers
+or operating systems are unacceptable.  All <code>#ifdef</code>'s should test
+for features.  The information about which configurations contain which
+features should be segregated into the configuration files.  Experience
+has proven far too often that a feature unique to one particular system
+often creeps into other systems; and that a conditional based on some
+predefined macro for your current system will become worthless over
+time, as new versions of your system come out that behave differently
+with regard to this feature.
+
+   <p>Adding code that handles specific architectures, operating systems,
+target interfaces, or hosts, is not acceptable in generic code.
+
+   <p><a name="index-portable-file-name-handling-478"></a><a name="index-file-names_002c-portability-479"></a>One particularly notorious area where system dependencies tend to
+creep in is handling of file names.  The mainline <span class="sc">gdb</span> code
+assumes Posix semantics of file names: absolute file names begin with
+a forward slash <samp><span class="file">/</span></samp>, slashes are used to separate leading
+directories, case-sensitive file names.  These assumptions are not
+necessarily true on non-Posix systems such as MS-Windows.  To avoid
+system-dependent code where you need to take apart or construct a file
+name, use the following portable macros:
+
+     
+<a name="index-HAVE_005fDOS_005fBASED_005fFILE_005fSYSTEM-480"></a>
+<dl><dt><code>HAVE_DOS_BASED_FILE_SYSTEM</code><dd>This preprocessing symbol is defined to a non-zero value on hosts
+whose filesystems belong to the MS-DOS/MS-Windows family.  Use this
+symbol to write conditional code which should only be compiled for
+such hosts.
+
+     <p><a name="index-IS_005fDIR_005fSEPARATOR-481"></a><br><dt><code>IS_DIR_SEPARATOR (</code><var>c</var><code>)</code><dd>Evaluates to a non-zero value if <var>c</var> is a directory separator
+character.  On Unix and GNU/Linux systems, only a slash <samp><span class="file">/</span></samp> is
+such a character, but on Windows, both <samp><span class="file">/</span></samp> and <samp><span class="file">\</span></samp> will
+pass.
+
+     <p><a name="index-IS_005fABSOLUTE_005fPATH-482"></a><br><dt><code>IS_ABSOLUTE_PATH (</code><var>file</var><code>)</code><dd>Evaluates to a non-zero value if <var>file</var> is an absolute file name. 
+For Unix and GNU/Linux hosts, a name which begins with a slash
+<samp><span class="file">/</span></samp> is absolute.  On DOS and Windows, <samp><span class="file">d:/foo</span></samp> and
+<samp><span class="file">x:\bar</span></samp> are also absolute file names.
+
+     <p><a name="index-FILENAME_005fCMP-483"></a><br><dt><code>FILENAME_CMP (</code><var>f1</var><code>, </code><var>f2</var><code>)</code><dd>Calls a function which compares file names <var>f1</var> and <var>f2</var> as
+appropriate for the underlying host filesystem.  For Posix systems,
+this simply calls <code>strcmp</code>; on case-insensitive filesystems it
+will call <code>strcasecmp</code> instead.
+
+     <p><a name="index-DIRNAME_005fSEPARATOR-484"></a><br><dt><code>DIRNAME_SEPARATOR</code><dd>Evaluates to a character which separates directories in
+<code>PATH</code>-style lists, typically held in environment variables. 
+This character is &lsquo;<samp><span class="samp">:</span></samp>&rsquo; on Unix, &lsquo;<samp><span class="samp">;</span></samp>&rsquo; on DOS and Windows.
+
+     <p><a name="index-SLASH_005fSTRING-485"></a><br><dt><code>SLASH_STRING</code><dd>This evaluates to a constant string you should use to produce an
+absolute filename from leading directories and the file's basename. 
+<code>SLASH_STRING</code> is <code>"/"</code> on most systems, but might be
+<code>"\\"</code> for some Windows-based ports. 
+</dl>
+
+   <p>In addition to using these macros, be sure to use portable library
+functions whenever possible.  For example, to extract a directory or a
+basename part from a file name, use the <code>dirname</code> and
+<code>basename</code> library functions (available in <code>libiberty</code> for
+platforms which don't provide them), instead of searching for a slash
+with <code>strrchr</code>.
+
+   <p>Another way to generalize <span class="sc">gdb</span> along a particular interface is with an
+attribute struct.  For example, <span class="sc">gdb</span> has been generalized to handle
+multiple kinds of remote interfaces&mdash;not by <code>#ifdef</code>s everywhere, but
+by defining the <code>target_ops</code> structure and having a current target (as
+well as a stack of targets below it, for memory references).  Whenever
+something needs to be done that depends on which remote interface we are
+using, a flag in the current target_ops structure is tested (e.g.,
+<code>target_has_stack</code>), or a function is called through a pointer in the
+current target_ops structure.  In this way, when a new remote interface
+is added, only one module needs to be touched&mdash;the one that actually
+implements the new remote interface.  Other examples of
+attribute-structs are BFD access to multiple kinds of object file
+formats, or <span class="sc">gdb</span>'s access to multiple source languages.
+
+   <p>Please avoid duplicating code.  For example, in <span class="sc">gdb</span> 3.x all
+the code interfacing between <code>ptrace</code> and the rest of
+<span class="sc">gdb</span> was duplicated in <samp><span class="file">*-dep.c</span></samp>, and so changing
+something was very painful.  In <span class="sc">gdb</span> 4.x, these have all been
+consolidated into <samp><span class="file">infptrace.c</span></samp>.  <samp><span class="file">infptrace.c</span></samp> can deal
+with variations between systems the same way any system-independent
+file would (hooks, <code>#if defined</code>, etc.), and machines which are
+radically different don't need to use <samp><span class="file">infptrace.c</span></samp> at all.
+
+   <p>All debugging code must be controllable using the &lsquo;<samp><span class="samp">set debug
+</span><var>module</var></samp>&rsquo; command.  Do not use <code>printf</code> to print trace
+messages.  Use <code>fprintf_unfiltered(gdb_stdlog, ...</code>.  Do not use
+<code>#ifdef DEBUG</code>.
+
+   </body></html>
+

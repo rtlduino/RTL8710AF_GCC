@@ -1,0 +1,80 @@
+<html lang="en">
+<head>
+<title>Requirements - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="up" href="Summary.html#Summary" title="Summary">
+<link rel="next" href="Contributors.html#Contributors" title="Contributors">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Requirements"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Contributors.html#Contributors">Contributors</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="Summary.html#Summary">Summary</a>
+<hr>
+</div>
+
+<h3 class="section">1.1 Requirements</h3>
+
+<p><a name="index-requirements-for-_0040value_007bGDBN_007d-1"></a>
+Before diving into the internals, you should understand the formal
+requirements and other expectations for <span class="sc">gdb</span>.  Although some
+of these may seem obvious, there have been proposals for <span class="sc">gdb</span>
+that have run counter to these requirements.
+
+   <p>First of all, <span class="sc">gdb</span> is a debugger.  It's not designed to be a
+front panel for embedded systems.  It's not a text editor.  It's not a
+shell.  It's not a programming environment.
+
+   <p><span class="sc">gdb</span> is an interactive tool.  Although a batch mode is
+available, <span class="sc">gdb</span>'s primary role is to interact with a human
+programmer.
+
+   <p><span class="sc">gdb</span> should be responsive to the user.  A programmer hot on
+the trail of a nasty bug, and operating under a looming deadline, is
+going to be very impatient of everything, including the response time
+to debugger commands.
+
+   <p><span class="sc">gdb</span> should be relatively permissive, such as for expressions. 
+While the compiler should be picky (or have the option to be made
+picky), since source code lives for a long time usually, the
+programmer doing debugging shouldn't be spending time figuring out to
+mollify the debugger.
+
+   <p><span class="sc">gdb</span> will be called upon to deal with really large programs. 
+Executable sizes of 50 to 100 megabytes occur regularly, and we've
+heard reports of programs approaching 1 gigabyte in size.
+
+   <p><span class="sc">gdb</span> should be able to run everywhere.  No other debugger is
+available for even half as many configurations as <span class="sc">gdb</span>
+supports.
+
+   </body></html>
+

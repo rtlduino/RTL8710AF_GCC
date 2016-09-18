@@ -1,0 +1,137 @@
+<html lang="en">
+<head>
+<title>Native Debugging - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Target-Vector-Definition.html#Target-Vector-Definition" title="Target Vector Definition">
+<link rel="next" href="Support-Libraries.html#Support-Libraries" title="Support Libraries">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="Native-Debugging"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="Support-Libraries.html#Support-Libraries">Support Libraries</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Target-Vector-Definition.html#Target-Vector-Definition">Target Vector Definition</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="chapter">14 Native Debugging</h2>
+
+<p><a name="index-native-debugging-440"></a>
+Several files control <span class="sc">gdb</span>'s configuration for native support:
+
+     
+<a name="index-NATDEPFILES-441"></a>
+<dl><dt><samp><span class="file">gdb/config/</span><var>arch</var><span class="file">/</span><var>xyz</var><span class="file">.mh</span></samp><dd>Specifies Makefile fragments needed by a <em>native</em> configuration on
+machine <var>xyz</var>.  In particular, this lists the required
+native-dependent object files, by defining &lsquo;<samp><span class="samp">NATDEPFILES=...</span></samp>&rsquo;. 
+Also specifies the header file which describes native support on
+<var>xyz</var>, by defining &lsquo;<samp><span class="samp">NAT_FILE= nm-</span><var>xyz</var><span class="samp">.h</span></samp>&rsquo;.  You can also
+define &lsquo;<samp><span class="samp">NAT_CFLAGS</span></samp>&rsquo;, &lsquo;<samp><span class="samp">NAT_ADD_FILES</span></samp>&rsquo;, &lsquo;<samp><span class="samp">NAT_CLIBS</span></samp>&rsquo;,
+&lsquo;<samp><span class="samp">NAT_CDEPS</span></samp>&rsquo;, &lsquo;<samp><span class="samp">NAT_GENERATED_FILES</span></samp>&rsquo;, etc.; see <samp><span class="file">Makefile.in</span></samp>.
+
+     <p><em>Maintainer's note: The </em><samp><span class="file">.mh</span></samp><em> suffix is because this file
+originally contained </em><samp><span class="file">Makefile</span></samp><em> fragments for hosting </em><span class="sc">gdb</span><em>
+on machine </em><var>xyz</var><em>.  While the file is no longer used for this
+purpose, the </em><samp><span class="file">.mh</span></samp><em> suffix remains.  Perhaps someone will
+eventually rename these fragments so that they have a </em><samp><span class="file">.mn</span></samp><em>
+suffix.</em>
+
+     <br><dt><samp><span class="file">gdb/config/</span><var>arch</var><span class="file">/nm-</span><var>xyz</var><span class="file">.h</span></samp><dd>(<samp><span class="file">nm.h</span></samp> is a link to this file, created by <code>configure</code>).  Contains C
+macro definitions describing the native system environment, such as
+child process control and core file support.
+
+     <br><dt><samp><span class="file">gdb/</span><var>xyz</var><span class="file">-nat.c</span></samp><dd>Contains any miscellaneous C code required for this native support of
+this machine.  On some machines it doesn't exist at all. 
+</dl>
+
+   <p>There are some &ldquo;generic&rdquo; versions of routines that can be used by
+various systems.  These can be customized in various ways by macros
+defined in your <samp><span class="file">nm-</span><var>xyz</var><span class="file">.h</span></samp> file.  If these routines work for
+the <var>xyz</var> host, you can just include the generic file's name (with
+&lsquo;<samp><span class="samp">.o</span></samp>&rsquo;, not &lsquo;<samp><span class="samp">.c</span></samp>&rsquo;) in <code>NATDEPFILES</code>.
+
+   <p>Otherwise, if your machine needs custom support routines, you will need
+to write routines that perform the same functions as the generic file. 
+Put them into <samp><var>xyz</var><span class="file">-nat.c</span></samp>, and put <samp><var>xyz</var><span class="file">-nat.o</span></samp>
+into <code>NATDEPFILES</code>.
+
+     <dl>
+<dt><samp><span class="file">inftarg.c</span></samp><dd>This contains the <em>target_ops vector</em> that supports Unix child
+processes on systems which use ptrace and wait to control the child.
+
+     <br><dt><samp><span class="file">procfs.c</span></samp><dd>This contains the <em>target_ops vector</em> that supports Unix child
+processes on systems which use /proc to control the child.
+
+     <br><dt><samp><span class="file">fork-child.c</span></samp><dd>This does the low-level grunge that uses Unix system calls to do a &ldquo;fork
+and exec&rdquo; to start up a child process.
+
+     <br><dt><samp><span class="file">infptrace.c</span></samp><dd>This is the low level interface to inferior processes for systems using
+the Unix <code>ptrace</code> call in a vanilla way. 
+</dl>
+
+<h3 class="section">14.1 ptrace</h3>
+
+<h3 class="section">14.2 /proc</h3>
+
+<h3 class="section">14.3 win32</h3>
+
+<h3 class="section">14.4 shared libraries</h3>
+
+<h3 class="section">14.5 Native Conditionals</h3>
+
+<p><a name="index-native-conditionals-442"></a>
+When <span class="sc">gdb</span> is configured and compiled, various macros are
+defined or left undefined, to control compilation when the host and
+target systems are the same.  These macros should be defined (or left
+undefined) in <samp><span class="file">nm-</span><var>system</var><span class="file">.h</span></samp>.
+
+     <dl>
+<dt><code>I386_USE_GENERIC_WATCHPOINTS</code><dd>An x86-based machine can define this to use the generic x86 watchpoint
+support; see <a href="Algorithms.html#Algorithms">I386_USE_GENERIC_WATCHPOINTS</a>.
+
+     <br><dt><code>SOLIB_ADD (</code><var>filename</var><code>, </code><var>from_tty</var><code>, </code><var>targ</var><code>, </code><var>readsyms</var><code>)</code><dd><a name="index-SOLIB_005fADD-443"></a>Define this to expand into an expression that will cause the symbols in
+<var>filename</var> to be added to <span class="sc">gdb</span>'s symbol table.  If
+<var>readsyms</var> is zero symbols are not read but any necessary low level
+processing for <var>filename</var> is still done.
+
+     <br><dt><code>SOLIB_CREATE_INFERIOR_HOOK</code><dd><a name="index-SOLIB_005fCREATE_005fINFERIOR_005fHOOK-444"></a>Define this to expand into any shared-library-relocation code that you
+want to be run just after the child process has been forked.
+
+     <br><dt><code>START_INFERIOR_TRAPS_EXPECTED</code><dd><a name="index-START_005fINFERIOR_005fTRAPS_005fEXPECTED-445"></a>When starting an inferior, <span class="sc">gdb</span> normally expects to trap
+twice; once when
+the shell execs, and once when the program itself execs.  If the actual
+number of traps is something other than 2, then define this macro to
+expand into the number expected.
+
+   </dl>
+
+   </body></html>
+

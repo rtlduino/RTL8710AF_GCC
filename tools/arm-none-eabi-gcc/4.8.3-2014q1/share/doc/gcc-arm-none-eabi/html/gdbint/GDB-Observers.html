@@ -1,0 +1,319 @@
+<html lang="en">
+<head>
+<title>GDB Observers - GDB Internals</title>
+<meta http-equiv="Content-Type" content="text/html">
+<meta name="description" content="GDB Internals">
+<meta name="generator" content="makeinfo 4.11">
+<link title="Top" rel="start" href="index.html#Top">
+<link rel="prev" href="Hints.html#Hints" title="Hints">
+<link rel="next" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License" title="GNU Free Documentation License">
+<link href="http://www.gnu.org/software/texinfo/" rel="generator-home" title="Texinfo Homepage">
+<!--
+Copyright (C) 1990-2013 Free Software Foundation, Inc.
+Contributed by Cygnus Solutions.  Written by John Gilmore.
+Second Edition by Stan Shebs.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.-->
+<meta http-equiv="Content-Style-Type" content="text/css">
+<style type="text/css"><!--
+  pre.display { font-family:inherit }
+  pre.format  { font-family:inherit }
+  pre.smalldisplay { font-family:inherit; font-size:smaller }
+  pre.smallformat  { font-family:inherit; font-size:smaller }
+  pre.smallexample { font-size:smaller }
+  pre.smalllisp    { font-size:smaller }
+  span.sc    { font-variant:small-caps }
+  span.roman { font-family:serif; font-weight:normal; } 
+  span.sansserif { font-family:sans-serif; font-weight:normal; } 
+--></style>
+</head>
+<body>
+<div class="node">
+<p>
+<a name="GDB-Observers"></a>
+Next:&nbsp;<a rel="next" accesskey="n" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>,
+Previous:&nbsp;<a rel="previous" accesskey="p" href="Hints.html#Hints">Hints</a>,
+Up:&nbsp;<a rel="up" accesskey="u" href="index.html#Top">Top</a>
+<hr>
+</div>
+
+<h2 class="appendix">Appendix A <span class="sc">gdb</span> Currently available observers</h2>
+
+<h3 class="section">A.1 Implementation rationale</h3>
+
+<p><a name="index-observers-implementation-rationale-503"></a>
+An <dfn>observer</dfn> is an entity which is interested in being notified
+when GDB reaches certain states, or certain events occur in GDB. 
+The entity being observed is called the <dfn>subject</dfn>.  To receive
+notifications, the observer attaches a callback to the subject. 
+One subject can have several observers.
+
+   <p><samp><span class="file">observer.c</span></samp> implements an internal generic low-level event
+notification mechanism.  This generic event notification mechanism is
+then re-used to implement the exported high-level notification
+management routines for all possible notifications.
+
+   <p>The current implementation of the generic observer provides support
+for contextual data.  This contextual data is given to the subject
+when attaching the callback.  In return, the subject will provide
+this contextual data back to the observer as a parameter of the
+callback.
+
+   <p>Note that the current support for the contextual data is only partial,
+as it lacks a mechanism that would deallocate this data when the
+callback is detached.  This is not a problem so far, as this contextual
+data is only used internally to hold a function pointer.  Later on, if
+a certain observer needs to provide support for user-level contextual
+data, then the generic notification mechanism will need to be
+enhanced to allow the observer to provide a routine to deallocate the
+data when attaching the callback.
+
+   <p>The observer implementation is also currently not reentrant. 
+In particular, it is therefore not possible to call the attach
+or detach routines during a notification.
+
+<h3 class="section">A.2 Debugging</h3>
+
+<p>Observer notifications can be traced using the command &lsquo;<samp><span class="samp">set debug
+observer 1</span></samp>&rsquo; (see <a href="../gdb/Debugging-Output.html#Debugging-Output">Optional messages about internal happenings</a>).
+
+<h3 class="section">A.3 <code>normal_stop</code> Notifications</h3>
+
+<p><a name="index-g_t_0040code_007bnormal_005fstop_007d-observer-504"></a><a name="index-notification-about-inferior-execution-stop-505"></a>
+<span class="sc">gdb</span> notifies all <code>normal_stop</code> observers when the
+inferior execution has just stopped, the associated messages and
+annotations have been printed, and the control is about to be returned
+to the user.
+
+   <p>Note that the <code>normal_stop</code> notification is not emitted when
+the execution stops due to a breakpoint, and this breakpoint has
+a condition that is not met.  If the breakpoint has any associated
+commands list, the commands are executed after the notification
+is emitted.
+
+   <p>The following interfaces are available to manage observers:
+
+<div class="defun">
+&mdash; Function: extern <b>struct</b><var> observer *observer_attach_event </var>(<var>observer_event_ftype *f</var>)<var><a name="index-struct-506"></a></var><br>
+<blockquote><p>Using the function <var>f</var>, create an observer that is notified when
+ever <var>event</var> occurs, return the observer. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: extern <b>void</b><var> observer_detach_event </var>(<var>struct observer *observer</var>)<var>;<a name="index-void-507"></a></var><br>
+<blockquote><p>Remove <var>observer</var> from the list of observers to be notified when
+<var>event</var> occurs. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: extern <b>void</b><var> observer_notify_event </var>(<var>void</var>)<var>;<a name="index-void-508"></a></var><br>
+<blockquote><p>Send a notification to all <var>event</var> observers. 
+</p></blockquote></div>
+
+   <p>The following observable events are defined:
+
+<div class="defun">
+&mdash; Function: void <b>normal_stop</b> (<var>struct bpstats *bs, int print_frame</var>)<var><a name="index-normal_005fstop-509"></a></var><br>
+<blockquote><p>The inferior has stopped for real.  The  <var>bs</var> argument describes
+the breakpoints were are stopped at, if any.  Second argument
+<var>print_frame</var> non-zero means display the location where the
+inferior has stopped. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>target_changed</b> (<var>struct target_ops *target</var>)<var><a name="index-target_005fchanged-510"></a></var><br>
+<blockquote><p>The target's register contents have changed. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>executable_changed</b> (<var>void</var>)<var><a name="index-executable_005fchanged-511"></a></var><br>
+<blockquote><p>The executable being debugged by GDB has changed: The user decided
+to debug a different program, or the program he was debugging has
+been modified since being loaded by the debugger (by being recompiled,
+for instance). 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>inferior_created</b> (<var>struct target_ops *objfile, int from_tty</var>)<var><a name="index-inferior_005fcreated-512"></a></var><br>
+<blockquote><p><span class="sc">gdb</span> has just connected to an inferior.  For &lsquo;<samp><span class="samp">run</span></samp>&rsquo;,
+<span class="sc">gdb</span> calls this observer while the inferior is still stopped
+at the entry-point instruction.  For &lsquo;<samp><span class="samp">attach</span></samp>&rsquo; and &lsquo;<samp><span class="samp">core</span></samp>&rsquo;,
+<span class="sc">gdb</span> calls this observer immediately after connecting to the
+inferior, and before any information on the inferior has been printed. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>record_changed</b> (<var>struct inferior *inferior, int started</var>)<var><a name="index-record_005fchanged-513"></a></var><br>
+<blockquote><p>The status of process record for inferior <var>inferior</var> in
+<span class="sc">gdb</span> has changed.  The process record is started if
+<var>started</var> is true, and the process record is stopped if
+<var>started</var> is false. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>solib_loaded</b> (<var>struct so_list *solib</var>)<var><a name="index-solib_005floaded-514"></a></var><br>
+<blockquote><p>The shared library specified by <var>solib</var> has been loaded.  Note that
+when <span class="sc">gdb</span> calls this observer, the library's symbols probably
+haven't been loaded yet. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>solib_unloaded</b> (<var>struct so_list *solib</var>)<var><a name="index-solib_005funloaded-515"></a></var><br>
+<blockquote><p>The shared library specified by <var>solib</var> has been unloaded. 
+Note that when <span class="sc">gdb</span> calls this observer, the library's
+symbols have not been unloaded yet, and thus are still available. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>new_objfile</b> (<var>struct objfile *objfile</var>)<var><a name="index-new_005fobjfile-516"></a></var><br>
+<blockquote><p>The symbol file specified by <var>objfile</var> has been loaded. 
+Called with <var>objfile</var> equal to <code>NULL</code> to indicate
+previously loaded symbol table data has now been invalidated. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>new_thread</b> (<var>struct thread_info *t</var>)<var><a name="index-new_005fthread-517"></a></var><br>
+<blockquote><p>The thread specified by <var>t</var> has been created. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>thread_exit</b> (<var>struct thread_info *t, int silent</var>)<var><a name="index-thread_005fexit-518"></a></var><br>
+<blockquote><p>The thread specified by <var>t</var> has exited.  The <var>silent</var> argument
+indicates that <span class="sc">gdb</span> is removing the thread from its tables
+without wanting to notify the user about it. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>thread_stop_requested</b> (<var>ptid_t ptid</var>)<var><a name="index-thread_005fstop_005frequested-519"></a></var><br>
+<blockquote><p>An explicit stop request was issued to <var>ptid</var>.  If <var>ptid</var>
+equals <var>minus_one_ptid</var>, the request applied to all threads.  If
+<code>ptid_is_pid(ptid)</code> returns true, the request applied to all
+threads of the process pointed at by <var>ptid</var>.  Otherwise, the
+request applied to the single thread pointed at by <var>ptid</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>target_resumed</b> (<var>ptid_t ptid</var>)<var><a name="index-target_005fresumed-520"></a></var><br>
+<blockquote><p>The target was resumed.  The <var>ptid</var> parameter specifies which
+thread was resume, and may be RESUME_ALL if all threads are resumed. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>about_to_proceed</b> (<var>void</var>)<var><a name="index-about_005fto_005fproceed-521"></a></var><br>
+<blockquote><p>The target is about to be proceeded. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>breakpoint_created</b> (<var>struct breakpoint *b</var>)<var><a name="index-breakpoint_005fcreated-522"></a></var><br>
+<blockquote><p>A new breakpoint <var>b</var> has been created. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>breakpoint_deleted</b> (<var>struct breakpoint *b</var>)<var><a name="index-breakpoint_005fdeleted-523"></a></var><br>
+<blockquote><p>A breakpoint has been destroyed.  The argument <var>b</var> is the
+pointer to the destroyed breakpoint. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>breakpoint_modified</b> (<var>struct breakpoint *b</var>)<var><a name="index-breakpoint_005fmodified-524"></a></var><br>
+<blockquote><p>A breakpoint has been modified in some way.  The argument <var>b</var>
+is the modified breakpoint. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>traceframe_changed</b> (<var>int tfnum, int tpnum</var>)<var><a name="index-traceframe_005fchanged-525"></a></var><br>
+<blockquote><p>The trace frame is changed to <var>tfnum</var> (e.g., by using the
+<code>tfind</code> command).  If <var>tfnum</var> is negative, it means
+<span class="sc">gdb</span> resumes live debugging.  The number of the tracepoint
+associated with this traceframe is <var>tpnum</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>architecture_changed</b> (<var>struct gdbarch *newarch</var>)<var><a name="index-architecture_005fchanged-526"></a></var><br>
+<blockquote><p>The current architecture has changed.  The argument <var>newarch</var> is
+a pointer to the new architecture. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>thread_ptid_changed</b> (<var>ptid_t old_ptid, ptid_t new_ptid</var>)<var><a name="index-thread_005fptid_005fchanged-527"></a></var><br>
+<blockquote><p>The thread's ptid has changed.  The <var>old_ptid</var> parameter specifies
+the old value, and <var>new_ptid</var> specifies the new value. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>inferior_added</b> (<var>struct inferior *inf</var>)<var><a name="index-inferior_005fadded-528"></a></var><br>
+<blockquote><p>The inferior <var>inf</var> has been added to the list of inferiors.  At
+this point, it might not be associated with any process. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>inferior_appeared</b> (<var>struct inferior *inf</var>)<var><a name="index-inferior_005fappeared-529"></a></var><br>
+<blockquote><p>The inferior identified by <var>inf</var> has been attached to a process. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>inferior_exit</b> (<var>struct inferior *inf</var>)<var><a name="index-inferior_005fexit-530"></a></var><br>
+<blockquote><p>Either the inferior associated with <var>inf</var> has been detached from the
+process, or the process has exited. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>inferior_removed</b> (<var>struct inferior *inf</var>)<var><a name="index-inferior_005fremoved-531"></a></var><br>
+<blockquote><p>The inferior <var>inf</var> has been removed from the list of inferiors. 
+This method is called immediately before freeing <var>inf</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>memory_changed</b> (<var>struct inferior *inferior, CORE_ADDR addr, ssize_t len, const bfd_byte *data</var>)<var><a name="index-memory_005fchanged-532"></a></var><br>
+<blockquote><p>Bytes from <var>data</var> to <var>data</var> + <var>len</var> have been written
+to the <var>inferior</var> at <var>addr</var>. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>before_prompt</b> (<var>const char *current_prompt</var>)<var><a name="index-before_005fprompt-533"></a></var><br>
+<blockquote><p>Called before a top-level prompt is displayed.  <var>current_prompt</var> is
+the current top-level prompt. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>gdb_datadir_changed</b> (<var>void</var>)<var><a name="index-gdb_005fdatadir_005fchanged-534"></a></var><br>
+<blockquote><p>Variable gdb_datadir has been set.  The value may not necessarily change. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>command_param_changed</b> (<var>const char *param, const char *value</var>)<var><a name="index-command_005fparam_005fchanged-535"></a></var><br>
+<blockquote><p>The parameter of some <code>set</code> commands in console are changed.  This
+method is called after a command <code>set </code><var>param</var> <var>value</var>. 
+<var>param</var> is the parameter of <code>set</code> command, and <var>value</var>
+is the value of changed parameter. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>tsv_created</b> (<var>const struct trace_state_variable *tsv</var>)<var><a name="index-tsv_005fcreated-536"></a></var><br>
+<blockquote><p>The new trace state variable <var>tsv</var> is created. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>tsv_deleted</b> (<var>const struct trace_state_variable *tsv</var>)<var><a name="index-tsv_005fdeleted-537"></a></var><br>
+<blockquote><p>The trace state variable <var>tsv</var> is deleted.  If <var>tsv</var> is
+<code>NULL</code>, all trace state variables are deleted. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>tsv_modified</b> (<var>const struct trace_state_variable *tsv</var>)<var><a name="index-tsv_005fmodified-538"></a></var><br>
+<blockquote><p>The trace state value <var>tsv</var> is modified. 
+</p></blockquote></div>
+
+<div class="defun">
+&mdash; Function: void <b>test_notification</b> (<var>int somearg</var>)<var><a name="index-test_005fnotification-539"></a></var><br>
+<blockquote><p>This observer is used for internal testing.  Do not use. 
+See testsuite/gdb.gdb/observer.exp. 
+</p></blockquote></div>
+
+   </body></html>
+
