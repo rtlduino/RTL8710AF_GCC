@@ -3,7 +3,7 @@
 ![logo_ex_new.png](docs/img/logo.png "logo")
 
 [![Join the chat at https://gitter.im/iot-tech-now/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link](https://img.shields.io/gitter/room/badges/shields.svg)](https://gitter.im/iot-tech-now/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link)
-[![Build Status](https://travis-ci.org/RtlduinoMan/RTLDUINO_RTL8710AF_GCC.svg?branch=master)](https://github.com/RtlduinoMan/RTLDUINO_RTL8710AF_GCC)
+[![Build Status](https://travis-ci.org/91fiona/gcc_yx.svg?branch=master)](https://travis-ci.org/91fiona/gcc_yx)
 [![Documentation Status](https://img.shields.io/badge/docs-latest-yellow.svg?style=flat)](http://rtlduino.iot-tech-now.com/)
 > 
 > ### A low power consumption, low cost,IOT WIFI solution of the operating system.
