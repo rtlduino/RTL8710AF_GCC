@@ -27,11 +27,10 @@
 > 
 > 
 > # Documentation
-> - [RTL00 Company web ,The first RTL8710AF WIFI module company](http://www.iot-tech-now.com)
-> - [RTL00, The most complete, most detailed introduce RTL8710 BBS](http://bbs.iot-tech-now.com)
+> - [RTL00 Company web ,The first RTL8710AF WIFI module company](http://www.nb-iot-tech.com)
+> - [RTL00, The most complete, most detailed introduce RTL8710 BBS](http://bbs.nb-iot-tech.com)
 > - [Realtek AMEBA BBS, all kinds of sample for your reference](http://www.amebaiot.com.cn/en/)
-> - [RTL-00 module specifications and the use of a pack of tong-baidu](https://pan.baidu.com/s/1c24yc3u)
-> - [RTL-00 module specifications and the use of a pack of tong-google](https://docs.google.com/uc?id=0B5j2mJrdXJIMUGQ2elJ0NWNCX0U&export=download) 
+
 > 
 > # Build Options
 > | Command       |Usage          | Description  |
@@ -46,6 +45,6 @@
 > 
 > 
 > # How to buy RTL00 modules
-> - [TAOBAO](https://shop144713139.taobao.com/index.htm?spm=2013.1.w5002-13891070375.2.S44Muz)
-> - [ALIEXPRESS](https://www.aliexpress.com/supplier-gs/wholesale-products/237862434-productlist.html? SPM = 2114.01010208.3.50 PxOsEP)
+> - [TAOBAO](https://item.taobao.com/item.htm?id=545045896396)
+> - [EBAY](http://www.ebay.com/itm/REALTEK-RTL8710-RTL8710AF-WIFI-MODULE-IOT-Low-consumption-High-transmit-powe-/192105487445?hash=item2cba611c55:g:EXsAAOSw32lYo7Rx)
 > 
