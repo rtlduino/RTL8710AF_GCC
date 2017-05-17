@@ -880,7 +880,7 @@ void fATPC(void *arg){
 	clientnode->addr = ntohl(addr.s_addr);
 	clientnode->local_port = local_port;
 	
-	if(xTaskCreate(client_start_task, ((const char*)"client_start_task"), ATCP_STACK_SIZE, clientnode, ATCMD_LWIP_TASK_PRIORITY, NULL) != pdPASS)
+	if(xTaskCreate(client_start_task, ((const char*)"client_start_task"), ATCP_STACK_SIZE, clientnode, ATCMD_LWIP_TASK_PRIORITY, &clientnode->handletask) != pdPASS)
 	{	
 		AT_DBG_MSG(AT_FLAG_LWIP, AT_DBG_ERROR,
 			"[ATPC] ERROR: Create tcp/udp client task failed.");
